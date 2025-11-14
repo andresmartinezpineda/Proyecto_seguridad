@@ -1,6 +1,8 @@
 import os
+import shutil
 import calendar
 from datetime import datetime
+
 
 class Vendor:
 
@@ -17,7 +19,7 @@ class Vendor:
         self.current_month = datetime.now().month
 
     # ---------------------------------------------------------
-    # 1️⃣  Crear carpeta principal del vendor
+    # Crear carpeta principal del vendor
     # ---------------------------------------------------------
     def create_vendor(self):
         """
@@ -32,7 +34,7 @@ class Vendor:
 
 
     # ---------------------------------------------------------
-    # 2️⃣  Crear carpeta del año actual
+    # Crear carpeta del año actual
     # ---------------------------------------------------------
     def create_year_folder(self):
         """
@@ -51,7 +53,7 @@ class Vendor:
 
 
     # ---------------------------------------------------------
-    # 3️⃣  Crear estructura del mes actual
+    # Crear estructura del mes actual
     # ---------------------------------------------------------
     def create_month_structure(self):
         """
@@ -84,7 +86,7 @@ class Vendor:
 
 
     # ---------------------------------------------------------
-    # 4️⃣  Función principal para actualizar todo automáticamente
+    # Función principal para todo un vendor automaticamente
     # ---------------------------------------------------------
     def update_structure(self):
         """
@@ -100,7 +102,7 @@ class Vendor:
         print(f"✅ Estructura actualizada para {self.name}: {self.current_year}/{self.current_month:02d}")
 
     # ---------------------------------------------------------
-    # Crear estructura de un mes y año personalizados
+    # Crear estructura de un mes y año personalizados en un solo vendor
     # ---------------------------------------------------------
     def create_custom_month_structure(self, year, month):
         """
@@ -146,10 +148,142 @@ class Vendor:
         self.current_year = previous_year                             # Restaura el valor original de self.current_year guardado al inicio
         self.current_month = previous_month                           # Restaura el valor original de self.current_month guardado al inicio
 
+    # ---------------------------------------------------------
+    #  Funcion para tomar el archivo de un drive y dejarlo en otro
+    #  utilizando como referencia del nombre de los archivos: (mes/año/producto/vendor)
+    # ---------------------------------------------------------
+    def process_latest_file(self, source_path):
+        """
+        Busca el archivo más reciente en 'source_path', analiza su nombre
+        para determinar vendor, mes, año y tipo (OE / OE JR), y lo copia
+        automáticamente a la carpeta correcta del vendor correspondiente.
+        """
+        # ---------------------------------------------------------
+        # Obtener archivo más reciente
+        # ---------------------------------------------------------
+        if not os.path.exists(source_path):                            # Comprueba que la ruta de origen exista
+            print(f"❌ La ruta de origen '{source_path}' no existe.")   # Informa si no existe la ruta
+            return                                                     # Sale de la función para evitar errores
+
+        files = [                                                       # Lista todos los elementos en source_path
+            f for f in os.listdir(source_path)
+            if os.path.isfile(os.path.join(source_path, f))            # Filtra dejando solo ficheros (no carpetas)
+        ]
+
+        if not files:                                                   # Si no hay archivos en la carpeta de origen
+            print("⚠️ No hay archivos en la carpeta de origen.")        # Informa y sale
+            return
+
+        # Elegir archivo más reciente por fecha de modificación
+        latest_file = max(                                               # Selecciona el nombre del archivo con mayor mtime
+            files,
+            key=lambda f: os.path.getmtime(os.path.join(source_path, f))
+        )
+
+        latest_path = os.path.join(source_path, latest_file)             # Construye la ruta completa del archivo más reciente
+        print(f"📄 Archivo más reciente encontrado: {latest_file}")      # Muestra el nombre del archivo elegido
+
+        # ---------------------------------------------------------
+        # Parsear nombre del archivo
+        # Ej: '3. OT Nov'25 OE AMC'
+        # ---------------------------------------------------------
+        # Quitar solo el número inicial.
+        clean_name = latest_file                                         # Copia el nombre original para limpiarlo sin modificarlo
+
+        # Si empieza con "número."
+        if clean_name[0].isdigit() and "." in clean_name.split()[0]:     # Detecta el numero de version del documento
+            clean_name = clean_name.split(".", 1)[1].strip()             # Elimina ese numero y el punto (queda el resto del nombre)
+
+        parts = clean_name.split()                                       # Separa el nombre limpio dividido por espacios(cada cadena separada por espacio la llamaremos "Token")
+
+        # Buscar mes abreviado (3 letras antes del ')
+        month_part = next((p for p in parts if "'" in p), None)          # Busca el token que contiene el apóstrofo (ej: "Nov'25")
+        if not month_part:                                               # Si no encuentra ese token
+            print("❌ No se pudo detectar el mes en el archivo.")        # Informa el error
+            return                                                       # Sale de la función
+
+        month_abbrev = month_part[:3]                                    # Toma las 3 primeras letras del token para obtener la abreviatura (ej: "Nov")
+        year_suffix = month_part.split("'")[1]                           # Toma la parte después del apóstrofo (ej: "25")
+
+        # Convertir año a formato 4 dígitos
+        year = 2000 + int(year_suffix)                                   # Convierte "25" en 2025 (asume siglo 2000)
+
+        # Convertir mes a número
+        try:
+            month_num = list(calendar.month_abbr).index(month_abbrev)    # Busca el índice de la abreviatura en calendar.month_abbr (0..12)
+        except ValueError:                                               # Si la abreviatura no existe
+            print(f"❌ Mes '{month_abbrev}' no reconocido.")              # Informa el error
+            return                                                       # Sale de la función
+
+        # ---------------------------------------------------------
+        # Detectar el nombre del producto (OE / OE JR)
+        # ---------------------------------------------------------
+        file_text = latest_file.upper()                                   # Convierte el nombre original a mayúsculas para comparar sin distinción
+
+        if "OE JR" in file_text:                                          # Si contiene "OE JR" (caso específico)
+            order_type_folder = "OE JR"                                   # Asigna la carpeta destino exacta "OE JR"
+        elif "OE" in file_text:                                           # Si contiene "OE" (y no "OE JR")
+            order_type_folder = "OEA"                                     # Asigna la carpeta destino "OEA"
+        else:
+            print("❌ No se encontró producto OE u OE JR en el nombre del archivo.")  # Si no encuentra el nombre del producto, informa
+            return                                                       # Sale de la función
+
+        # ---------------------------------------------------------
+        # Detectar vendor (última palabra del nombre)
+        # ---------------------------------------------------------
+        # Obtener el último fragmento (ej: "AMC.xlsm")
+        last_part = parts[-1]                                             # Toma el último token del nombre limpiado
+
+        # Quitar extensión correctamente
+        vendor_name = os.path.splitext(last_part)[0].upper()              # Quita la extensión con splitext y pasa a mayúsculas (ej: "AMC")
+
+        # Verificar si existe la carpeta del vendor
+        vendor_path = os.path.join(self.BASE_PATH, vendor_name)           # Construye la ruta esperada del vendor dentro de BASE_PATH
+        if not os.path.exists(vendor_path):                               # Si esa carpeta no existe
+            print(f"❌ No existe el vendor '{vendor_name}' en la ruta base.")  # Informa que el vendor no fue encontrado
+            return                                                       # Sale de la función
+
+        # ---------------------------------------------------------
+        # Crear estructura si no existe (reutiliza tu lógica)
+        # ---------------------------------------------------------
+        temp_vendor = Vendor(vendor_name)                                  # Crea una instancia temporal de Vendor para reutilizar sus métodos
+        temp_vendor.create_custom_month_structure(year, month_num)         # Llama a tu método para asegurar que año/mes existan
+
+        # ---------------------------------------------------------
+        # Construir ruta final
+        # ---------------------------------------------------------
+        month_full_name = calendar.month_name[month_num]                   # Obtiene el nombre completo del mes (ej: "November")
+        month_folder = f"{month_num:02d}.{month_full_name}"                # Formatea la carpeta del mes como "11.November"
+
+        final_path = os.path.join(                                        # Construye la ruta final donde irá el archivo
+            vendor_path,
+            str(year),
+            month_folder,
+            "ordenes",
+            order_type_folder
+        )
+
+        os.makedirs(final_path, exist_ok=True)                            # Asegura que la ruta final exista (la crea si falta)
+
+        # Ruta del archivo de destino
+        destination_file = os.path.join(final_path, latest_file)          # Nombre final: conserva el nombre original del archivo
+
+        # ---------------------------------------------------------
+        # Copiar archivo (reemplaza si ya existe)
+        # ---------------------------------------------------------
+        try:
+            shutil.copy2(latest_path, destination_file)                     # Copia el archivo preservando metadatos; sobrescribe si existe
+            print(f"✅ Archivo copiado a: {destination_file}")                 # Mensaje final indicando la ruta destino
+        except PermissionError:
+            print("❌ El archivo está en uso por otro programa (Excel u otro). No se pudo copiar.")
+            return
+        except Exception as e:
+            print(f"❌ Error inesperado al copiar el archivo: {e}")
+            return 
 
 def update_all_vendors_month(year, month):
     # ---------------------------------------------------------
-    # 🆕 Crear estructura de un mes y año personalizados
+    # Crear estructura de un mes y año personalizados para todos los vendors a la vez
     # ---------------------------------------------------------
 
     BASE_PATH = r"G:\Unidades compartidas\Vendor_files"          # Ruta base donde se almacenan todas las carpetas de los vendors
@@ -181,10 +315,9 @@ def update_all_vendors_month(year, month):
 
 
 def main():
+    vendor = Vendor("AMC")
+    vendor.process_latest_file(r"G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV\AMC\Año 2025\11-November\01. OE\02. Insertion orders")
 
-    year = int(input("ingresa el año:"))
-    month = int(input("ingresa el mes:"))
-    update_all_vendors_month(year,month)
 
 if __name__ == "__main__":
     main()
