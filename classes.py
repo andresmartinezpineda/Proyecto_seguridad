@@ -1,11 +1,11 @@
 import os
+import re
 import shutil
 import calendar
 from datetime import datetime
 
 
 class Vendor:
-
     BASE_PATH = r"G:\Unidades compartidas\Vendor_files"
 
     def __init__(self, name):
@@ -58,7 +58,7 @@ class Vendor:
     def create_month_structure(self):
         """
         Crea la estructura del mes actual dentro del año correspondiente.
-        Ejemplo: C:/Vendors/Sony/2025/11/
+        Ejemplo: C:/Vendor_files/Sony/2025/11/...
         """
         year_path = self.create_year_folder()
 
@@ -86,7 +86,8 @@ class Vendor:
 
 
     # ---------------------------------------------------------
-    # Función principal para todo un vendor automaticamente
+    # Función principal para crear todo un vendor automaticamente
+    # lo ideal es crear un objeto vendor y llamar a este metodo para crear toda la estructura
     # ---------------------------------------------------------
     def update_structure(self):
         """
@@ -102,7 +103,8 @@ class Vendor:
         print(f"✅ Estructura actualizada para {self.name}: {self.current_year}/{self.current_month:02d}")
 
     # ---------------------------------------------------------
-    # Crear estructura de un mes y año personalizados en un solo vendor
+    # Crear estructura de un mes y año personalizados en un solo vendor, esto se usara en el manager de vendors
+    # para crear la estructura de un mes/año especifico en todos los vendors
     # ---------------------------------------------------------
     def create_custom_month_structure(self, year, month):
         """
@@ -149,8 +151,9 @@ class Vendor:
         self.current_month = previous_month                           # Restaura el valor original de self.current_month guardado al inicio
 
     # ---------------------------------------------------------
-    #  Funcion para tomar el archivo de un drive y dejarlo en otro
-    #  utilizando como referencia del nombre de los archivos: (mes/año/producto/vendor)
+    # Funcion para tomar el archivo de un drive y dejarlo en otro
+    # utilizando como referencia del nombre de los archivos: (mes/año/producto/vendor)
+    # esto se usara en el manager de vendors para procesar archivos de todos los vendors
     # ---------------------------------------------------------
     def process_latest_file(self, source_path):
         """
@@ -281,42 +284,122 @@ class Vendor:
             print(f"❌ Error inesperado al copiar el archivo: {e}")
             return 
 
-def update_all_vendors_month(year, month):
-    # ---------------------------------------------------------
-    # Crear estructura de un mes y año personalizados para todos los vendors a la vez
-    # ---------------------------------------------------------
+# Nueva clase para gestionar varios vendors
+class ManagerVendors:
+    # Referenciar la misma ruta base definida en Vendor evita duplicar la constante
+    BASE_PATH = r"G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV"
 
-    BASE_PATH = r"G:\Unidades compartidas\Vendor_files"          # Ruta base donde se almacenan todas las carpetas de los vendors
-        
-    # Verificar que la ruta base exista antes de continuar
-    if not os.path.exists(BASE_PATH):                            # Comprueba si la ruta base existe en el sistema
-        print(f"❌ La ruta base '{BASE_PATH}' no existe. No se puede continuar.")  # Muestra error si la ruta no existe
-        return                                                   # Sale de la función para evitar errores posteriores
+    @classmethod
+    def update_all_vendors_month(cls, year, month):
+        """
+        Crea la estructura de un mes/año específicos para todos los vendors dentro de BASE_PATH.
+        """
+        if not os.path.exists(Vendor.BASE_PATH):
+            print(f"❌ La ruta base '{cls.BASE_PATH}' no existe. No se puede continuar.")
+            return
 
-    # Recorrer todas las carpetas (vendors) dentro de la ruta base
-    for vendor_name in os.listdir(BASE_PATH):                    # Itera sobre cada elemento dentro de la ruta base
-        vendor_path = os.path.join(BASE_PATH, vendor_name)       # Construye la ruta completa del elemento actual
+        for vendor_name in os.listdir(Vendor.BASE_PATH):
+            vendor_path = os.path.join(Vendor.BASE_PATH, vendor_name)
+            if os.path.isdir(vendor_path):
+                vendor = Vendor(vendor_name)
+                try:
+                    vendor.create_custom_month_structure(year, month)
+                except Exception as e:
+                    print(f"❌ Error al actualizar {vendor_name}: {e}")
+                else:
+                    print(f"✅ Actualizado vendor: {vendor_name}")
 
-        # Solo continuar si el elemento es una carpeta
-        if os.path.isdir(vendor_path):                           # Verifica que el elemento sea una carpeta y no un archivo
-            vendor = Vendor(vendor_name)                         # Crea una instancia de la clase Vendor con el nombre de la carpeta
+        print("🎯 Estructura de mes/año creada para todos los vendors.")
+
+
+    @classmethod
+    def process_all_latest_files(cls, selected_year, selected_month):
+        """
+        Procesa archivos de todos los vendors usando el año y mes seleccionados.
+        Busca carpetas de año como: 'Año 2025', '2025', '2025 OLD', etc.
+        Busca carpetas de mes como: '11-November', '11_December', '11.November', etc.
+        """
+        # -----------------------------------------------------------
+        # Formatos aceptados para el mes
+        # -----------------------------------------------------------
+        possible_month_prefixes = [
+            f"{selected_month:02d}-",  # ejemplo real: "11-November" (prefijo con guion)
+            f"{selected_month:02d}_",  # variante: "11_November" (prefijo con guion bajo)
+            f"{selected_month:02d}.",  # variante: "11.November" (prefijo con punto)
+        ]  # <-- lista con los prefijos posibles que se usarán para detectar la carpeta del mes
+
+        # -----------------------------------------------------------
+        # Recorrer cada vendor dentro de la ruta base
+        # -----------------------------------------------------------
+        for vendor_name in os.listdir(cls.BASE_PATH):                # Lee todos los elementos en BASE_PATH (posibles vendors)
+            vendor_path = os.path.join(cls.BASE_PATH, vendor_name)   # Construye la ruta completa del vendor
+
+            if not os.path.isdir(vendor_path):                       # Si no es una carpeta (ej: archivo), saltarla
+                continue
+
+            print(f"\n🔍 Procesando vendor: {vendor_name}")          # Mensaje informativo: vendor que se está procesando
+
+            # -------------------------------------------------------
+            # 1. BUSCAR LA CARPETA DEL AÑO (ej: "Año 2025", "2025", etc.)
+            # -------------------------------------------------------
+            year_folder = None                                       # Inicializar variable que contendrá el nombre de la carpeta de año
+            year_pattern = re.compile(rf".*{selected_year}.*")       # Expresión regular: coincide con cualquier carpeta que contenga el número del año
+
+            for folder in os.listdir(vendor_path):                   # Iterar sobre las carpetas/archivos dentro del vendor
+                full_path = os.path.join(vendor_path, folder)        # Construir la ruta completa del item actual
+                if os.path.isdir(full_path) and year_pattern.match(folder):  # Si es carpeta y su nombre coincide con el patrón del año
+                    year_folder = folder                             # Guardar el nombre de la carpeta de año encontrada
+                    break                                            # Salir del bucle al encontrar la primera coincidencia
+
+            if not year_folder:                                      # Si no se encontró ninguna carpeta que contenga el año
+                print(f"⚠️ El vendor '{vendor_name}' no tiene pautas en el año {selected_year}.")  # Mensaje informativo de ausencia
+                continue                                             # Seguir con el siguiente vendor
+
+            year_path = os.path.join(vendor_path, year_folder)       # Construir la ruta completa a la carpeta de año encontrada
+            print(f"📁 Carpeta encontrada del año: {year_folder}")   # Mensaje informativo con el nombre exacto de la carpeta de año
+
+            # -------------------------------------------------------
+            # 2. BUSCAR LA CARPETA DEL MES (formato flexible: 11-November | 11_November | 11.November)
+            # -------------------------------------------------------
+            month_folder = None                                      # Inicializar variable que contendrá el nombre de la carpeta del mes
+
+            for folder in os.listdir(year_path):                     # Iterar sobre los elementos dentro de la carpeta del año
+                # Si el nombre de la carpeta empieza con cualquiera de los prefijos aceptados => es el mes buscado
+                if any(folder.startswith(prefix) for prefix in possible_month_prefixes):
+                    month_folder = folder                            # Guardar el nombre de la carpeta del mes encontrada
+                    break                                            # Salir del bucle al encontrar la primera coincidencia
+
+            if not month_folder:                                     # Si no se encontró la carpeta del mes
+                print(f"⚠️ El vendor '{vendor_name}' no tiene pautas en el mes {selected_month:02d}.")  # Mensaje informativo de ausencia
+                continue                                             # Seguir con el siguiente vendor
+
+            month_path = os.path.join(year_path, month_folder)       # Construir la ruta completa a la carpeta del mes encontrada
+            print(f"📁 Carpeta encontrada del mes: {month_folder}")  # Mensaje informativo con el nombre exacto de la carpeta del mes
+
+            # -------------------------------------------------------
+            # 3. PROCESAR CARPETAS "01. OE" Y "02. OE JR"
+            # -------------------------------------------------------
+            oe_folders = {
+                "01. OE": "02. Insertion orders",                    # Mapeo: carpeta principal -> subcarpeta donde están las insertion orders
+                "02. OE JR": "02. Insertion orders",
+            }
+
+            vendor_instance = Vendor(vendor_name)                    # Crear instancia temporal de Vendor para reutilizar process_latest_file
+
+            for main_folder, subfolder in oe_folders.items():        # Iterar sobre ambas carpetas (OE y OE JR)
+                main_path = os.path.join(month_path, main_folder)    # Ruta a "01. OE" o "02. OE JR"
+                final_orders_path = os.path.join(main_path, subfolder)  # Ruta a "02. Insertion orders" dentro de la anterior
+
+                if os.path.isdir(final_orders_path):                 # Si la ruta existe (carpeta de insertion orders)
+                    print(f"📄 Procesando archivos en: {final_orders_path}")  # Mensaje informativo antes de procesar
+                    vendor_instance.process_latest_file(final_orders_path)   # Llamada al método que copia el archivo más reciente
+                else:
+                    print(f"⚠️ No se encontró {final_orders_path}")  # Mensaje informando que la subcarpeta esperada no existe
             
-            try:
-                # Llamar al método existente para crear la carpeta del mes/año
-                vendor.create_custom_month_structure(year, month)   # Usa el método para crear la estructura del mes/año personalizado
-            except Exception as e:
-                print(f"❌ Error al actualizar {vendor_name}: {e}")
-
-            print(f"✅ Actualizado vendor: {vendor_name}")       # Informa que el vendor fue actualizado correctamente
-
-    # Confirmar que todo terminó correctamente
-    print("🎯 Estructura de mes/año creada para todos los vendors.")  # Mensaje final confirmando que el proceso concluyó
-
-
 
 def main():
-    vendor = Vendor("AMC")
-    vendor.process_latest_file(r"G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV\AMC\Año 2025\11-November\01. OE\02. Insertion orders")
+    manager_vendors = ManagerVendors()
+    manager_vendors.update_all_vendors_month(2025,12)
 
 
 if __name__ == "__main__":
