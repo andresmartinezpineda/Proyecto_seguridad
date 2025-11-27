@@ -160,139 +160,6 @@ class Vendor:
         self.current_year = previous_year                             # Restaura el valor original de self.current_year guardado al inicio
         self.current_month = previous_month                           # Restaura el valor original de self.current_month guardado al inicio
 
-    # ---------------------------------------------------------
-    # Funcion para tomar el archivo de un drive y dejarlo en otro
-    # utilizando como referencia del nombre de los archivos: (mes/año/producto/vendor)
-    # esto se usara en el manager de vendors para procesar archivos de todos los vendors
-    # ---------------------------------------------------------
-    def process_latest_file(self, source_path):
-        """
-        Busca el archivo más reciente en 'source_path', analiza su nombre
-        para determinar vendor, mes, año y tipo (OE / OE JR), y lo copia
-        automáticamente a la carpeta correcta del vendor correspondiente.
-        """
-        # ---------------------------------------------------------
-        # Obtener archivo más reciente
-        # ---------------------------------------------------------
-        if not os.path.exists(source_path):                            # Comprueba que la ruta de origen exista
-            print(f"❌ La ruta de origen '{source_path}' no existe.")   # Informa si no existe la ruta
-            return                                                     # Sale de la función para evitar errores
-
-        files = [                                                       # Lista todos los elementos en source_path
-            f for f in os.listdir(source_path)
-            if os.path.isfile(os.path.join(source_path, f))            # Filtra dejando solo ficheros (no carpetas)
-        ]
-
-        if not files:                                                   # Si no hay archivos en la carpeta de origen
-            print("⚠️ No hay archivos en la carpeta de origen.")        # Informa y sale
-            return
-
-        # Elegir archivo más reciente por fecha de modificación
-        latest_file = max(                                               # Selecciona el nombre del archivo con mayor mtime
-            files,
-            key=lambda f: os.path.getmtime(os.path.join(source_path, f))
-        )
-
-        latest_path = os.path.join(source_path, latest_file)             # Construye la ruta completa del archivo más reciente
-        print(f"📄 Archivo más reciente encontrado: {latest_file}")      # Muestra el nombre del archivo elegido
-
-        # ---------------------------------------------------------
-        # Parsear nombre del archivo
-        # Ej: '3. OT Nov'25 OE AMC'
-        # ---------------------------------------------------------
-        # Quitar solo el número inicial.
-        clean_name = latest_file                                         # Copia el nombre original para limpiarlo sin modificarlo
-
-        # Si empieza con "número."
-        if clean_name[0].isdigit() and "." in clean_name.split()[0]:     # Detecta el numero de version del documento
-            clean_name = clean_name.split(".", 1)[1].strip()             # Elimina ese numero y el punto (queda el resto del nombre)
-
-        parts = clean_name.split()                                       # Separa el nombre limpio dividido por espacios(cada cadena separada por espacio la llamaremos "Token")
-
-        # Buscar mes abreviado (3 letras antes del ')
-        month_part = next((p for p in parts if "'" in p), None)          # Busca el token que contiene el apóstrofo (ej: "Nov'25")
-        if not month_part:                                               # Si no encuentra ese token
-            print("❌ No se pudo detectar el mes en el archivo.")        # Informa el error
-            return                                                       # Sale de la función
-
-        month_abbrev = month_part[:3]                                    # Toma las 3 primeras letras del token para obtener la abreviatura (ej: "Nov")
-        year_suffix = month_part.split("'")[1]                           # Toma la parte después del apóstrofo (ej: "25")
-
-        # Convertir año a formato 4 dígitos
-        year = 2000 + int(year_suffix)                                   # Convierte "25" en 2025 (asume siglo 2000)
-
-        # Convertir mes a número
-        try:
-            month_num = list(calendar.month_abbr).index(month_abbrev)    # Busca el índice de la abreviatura en calendar.month_abbr (0..12)
-        except ValueError:                                               # Si la abreviatura no existe
-            print(f"❌ Mes '{month_abbrev}' no reconocido.")              # Informa el error
-            return                                                       # Sale de la función
-
-        # ---------------------------------------------------------
-        # Detectar el nombre del producto (OE / OE JR)
-        # ---------------------------------------------------------
-        file_text = latest_file.upper()                                   # Convierte el nombre original a mayúsculas para comparar sin distinción
-
-        if "OE JR" in file_text:                                          # Si contiene "OE JR" (caso específico)
-            order_type_folder = "OE JR"                                   # Asigna la carpeta destino exacta "OE JR"
-        elif "OE" in file_text:                                           # Si contiene "OE" (y no "OE JR")
-            order_type_folder = "OEA"                                     # Asigna la carpeta destino "OEA"
-        else:
-            print("❌ No se encontró producto OE u OE JR en el nombre del archivo.")  # Si no encuentra el nombre del producto, informa
-            return                                                       # Sale de la función
-
-        # ---------------------------------------------------------
-        # Detectar vendor (última palabra del nombre)
-        # ---------------------------------------------------------
-        # Obtener el último fragmento (ej: "AMC.xlsm")
-        last_part = parts[-1]                                             # Toma el último token del nombre limpiado
-
-        # Quitar extensión correctamente
-        vendor_name = os.path.splitext(last_part)[0].upper()              # Quita la extensión con splitext y pasa a mayúsculas (ej: "AMC")
-
-        # Verificar si existe la carpeta del vendor
-        vendor_path = os.path.join(self.BASE_PATH, vendor_name)           # Construye la ruta esperada del vendor dentro de BASE_PATH
-        if not os.path.exists(vendor_path):                               # Si esa carpeta no existe
-            print(f"❌ No existe el vendor '{vendor_name}' en la ruta base.")  # Informa que el vendor no fue encontrado
-            return                                                       # Sale de la función
-
-        # ---------------------------------------------------------
-        # Crear estructura si no existe (reutiliza tu lógica)
-        # ---------------------------------------------------------
-        temp_vendor = Vendor(vendor_name)                                  # Crea una instancia temporal de Vendor para reutilizar sus métodos
-        temp_vendor.create_custom_month_structure(year, month_num)         # Llama a tu método para asegurar que año/mes existan
-
-        # ---------------------------------------------------------
-        # Construir ruta final
-        # ---------------------------------------------------------
-        month_full_name = calendar.month_name[month_num]                   # Obtiene el nombre completo del mes (ej: "November")
-        month_folder = f"{month_num:02d}.{month_full_name}"                # Formatea la carpeta del mes como "11.November"
-
-        final_path = os.path.join(                                        # Construye la ruta final donde irá el archivo
-            vendor_path,
-            str(year),
-            month_folder,
-            "ordenes",
-            order_type_folder
-        )
-
-        os.makedirs(final_path, exist_ok=True)                            # Asegura que la ruta final exista (la crea si falta)
-
-        # Ruta del archivo de destino
-        destination_file = os.path.join(final_path, latest_file)          # Nombre final: conserva el nombre original del archivo
-
-        # ---------------------------------------------------------
-        # Copiar archivo (reemplaza si ya existe)
-        # ---------------------------------------------------------
-        try:
-            shutil.copy2(latest_path, destination_file)                     # Copia el archivo preservando metadatos; sobrescribe si existe
-            print(f"✅ Archivo copiado a: {destination_file}")                 # Mensaje final indicando la ruta destino
-        except PermissionError:
-            print("❌ El archivo está en uso por otro programa (Excel u otro). No se pudo copiar.")
-            return
-        except Exception as e:
-            print(f"❌ Error inesperado al copiar el archivo: {e}")
-            return 
 
 # Nueva clase para gestionar varios vendors
 class ManagerVendors:
@@ -322,244 +189,263 @@ class ManagerVendors:
         print("🎯 Estructura de mes/año creada para todos los vendors.")
 
 
-    @classmethod
-    def process_all_latest_files(cls, selected_year, selected_month):
-        """
-        Procesa archivos de todos los vendors usando el año y mes seleccionados.
-        Busca carpetas de año como: 'Año 2025', '2025', '2025 OLD', etc.
-        Busca carpetas de mes como: '11-November', '11_December', '11.November', etc.
-        """
-        # -----------------------------------------------------------
-        # Formatos aceptados para el mes
-        # -----------------------------------------------------------
-        possible_month_prefixes = [
-            f"{selected_month:02d}-",  # ejemplo real: "11-November" (prefijo con guion)
-            f"{selected_month:02d}_",  # variante: "11_November" (prefijo con guion bajo)
-            f"{selected_month:02d}.",  # variante: "11.November" (prefijo con punto)
-        ]  # <-- lista con los prefijos posibles que se usarán para detectar la carpeta del mes
-
-        # -----------------------------------------------------------
-        # Recorrer cada vendor dentro de la ruta base
-        # -----------------------------------------------------------
-        for vendor_name in os.listdir(cls.BASE_PATH):                # Lee todos los elementos en BASE_PATH (posibles vendors)
-            vendor_path = os.path.join(cls.BASE_PATH, vendor_name)   # Construye la ruta completa del vendor
-
-            if not os.path.isdir(vendor_path):                       # Si no es una carpeta (ej: archivo), saltarla
-                continue
-
-            print(f"\n🔍 Procesando vendor: {vendor_name}")          # Mensaje informativo: vendor que se está procesando
-
-            # -------------------------------------------------------
-            # 1. BUSCAR LA CARPETA DEL AÑO (ej: "Año 2025", "2025", etc.)
-            # -------------------------------------------------------
-            year_folder = None                                       # Inicializar variable que contendrá el nombre de la carpeta de año
-            year_pattern = re.compile(rf".*{selected_year}.*")       # Expresión regular: coincide con cualquier carpeta que contenga el número del año
-
-            for folder in os.listdir(vendor_path):                   # Iterar sobre las carpetas/archivos dentro del vendor
-                full_path = os.path.join(vendor_path, folder)        # Construir la ruta completa del item actual
-                if os.path.isdir(full_path) and year_pattern.match(folder):  # Si es carpeta y su nombre coincide con el patrón del año
-                    year_folder = folder                             # Guardar el nombre de la carpeta de año encontrada
-                    break                                            # Salir del bucle al encontrar la primera coincidencia
-
-            if not year_folder:                                      # Si no se encontró ninguna carpeta que contenga el año
-                print(f"⚠️ El vendor '{vendor_name}' no tiene pautas en el año {selected_year}.")  # Mensaje informativo de ausencia
-                continue                                             # Seguir con el siguiente vendor
-
-            year_path = os.path.join(vendor_path, year_folder)       # Construir la ruta completa a la carpeta de año encontrada
-            print(f"📁 Carpeta encontrada del año: {year_folder}")   # Mensaje informativo con el nombre exacto de la carpeta de año
-
-            # -------------------------------------------------------
-            # 2. BUSCAR LA CARPETA DEL MES (formato flexible: 11-November | 11_November | 11.November)
-            # -------------------------------------------------------
-            month_folder = None                                      # Inicializar variable que contendrá el nombre de la carpeta del mes
-
-            for folder in os.listdir(year_path):                     # Iterar sobre los elementos dentro de la carpeta del año
-                # Si el nombre de la carpeta empieza con cualquiera de los prefijos aceptados => es el mes buscado
-                if any(folder.startswith(prefix) for prefix in possible_month_prefixes):
-                    month_folder = folder                            # Guardar el nombre de la carpeta del mes encontrada
-                    break                                            # Salir del bucle al encontrar la primera coincidencia
-
-            if not month_folder:                                     # Si no se encontró la carpeta del mes
-                print(f"⚠️ El vendor '{vendor_name}' no tiene pautas en el mes {selected_month:02d}.")  # Mensaje informativo de ausencia
-                continue                                             # Seguir con el siguiente vendor
-
-            month_path = os.path.join(year_path, month_folder)       # Construir la ruta completa a la carpeta del mes encontrada
-            print(f"📁 Carpeta encontrada del mes: {month_folder}")  # Mensaje informativo con el nombre exacto de la carpeta del mes
-
-            # -------------------------------------------------------
-            # 3. PROCESAR CARPETAS "01. OE" Y "02. OE JR"
-            # -------------------------------------------------------
-            oe_folders = {
-                "01. OE": "02. Insertion orders",                    # Mapeo: carpeta principal -> subcarpeta donde están las insertion orders
-                "02. OE JR": "02. Insertion orders",
-            }
-
-            vendor_instance = Vendor(vendor_name)                    # Crear instancia temporal de Vendor para reutilizar process_latest_file
-
-            for main_folder, subfolder in oe_folders.items():        # Iterar sobre ambas carpetas (OE y OE JR)
-                main_path = os.path.join(month_path, main_folder)    # Ruta a "01. OE" o "02. OE JR"
-                final_orders_path = os.path.join(main_path, subfolder)  # Ruta a "02. Insertion orders" dentro de la anterior
-
-                if os.path.isdir(final_orders_path):                 # Si la ruta existe (carpeta de insertion orders)
-                    print(f"📄 Procesando archivos en: {final_orders_path}")  # Mensaje informativo antes de procesar
-                    vendor_instance.process_latest_file(final_orders_path)   # Llamada al método que copia el archivo más reciente
-                else:
-                    print(f"⚠️ No se encontró {final_orders_path}")  # Mensaje informando que la subcarpeta esperada no existe
+    @staticmethod
+    def normalize(text: str) -> str:
+        """Convierte textos a minúsculas para comparar sin discriminar mayúsculas."""
+        return text.strip().lower()
 
     @classmethod
-    def send_vendor_summary(cls, year: int, month: int):
-        """
-        Busca en cada vendor origen el archivo 'Summary' y lo copia al vendor destino.
-        Se respetan los formatos:
-        - Origen:  "MM-MonthName"  (ej: "12-December")
-        - Destino: "MM.MonthName"  (ej: "12.November") y dentro de esa carpeta entramos en 'cierres/'
-        No crea carpetas nuevas; si falta algo imprime mensaje y continúa.
-        """
-        # Nombre de carpeta mes destino: "11.November"
-        month_name = datetime(year, month, 1).strftime("%B")  # p. ej. "November"  -> obtiene nombre del mes completo
+    def copy_latest_order(cls, vendor_name: str, product: str, year: int, month: int):
 
-        month_folder_dest = f"{month:02d}.{month_name}"       # p. ej. "11.November"  -> construye carpeta destino con formato MM.MonthName
+        print("\n================ INICIO DEL PROCESO ================")
+        print(f"> vendor_name = {vendor_name}")
+        print(f"> product = {product}")
+        print(f"> year = {year}")
+        print(f"> month = {month}")
+        print("====================================================\n")
 
-        # Nombre de carpeta mes origen: "11-November"
-        month_folder_src = f"{month:02d}-{month_name}"        # p. ej. "11-November"  -> construye carpeta origen con guion (formato esperado en remitente)
+        vendor_name_clean = cls.normalize(vendor_name)
+        product_clean = cls.normalize(product)
 
-        # Validar que la ruta remitente exista
-        if not os.path.isdir(cls.BASE_PATH):                  # comprueba que la ruta base de remitente exista y sea directorio
-            print(f"❌ La ruta remitente '{cls.BASE_PATH}' no existe.")  # informa si no existe
-            return                                           # sale si la ruta remitente no existe
+        if product_clean not in ["oe", "oe jr"]:
+            print("❌ Error: producto inválido")
+            return
 
-        # Recorrer todos los vendors en la ruta remitente
-        for vendor in os.listdir(cls.BASE_PATH):              # itera sobre cada entrada en la ruta remitente
-            vendor_path = os.path.join(cls.BASE_PATH, vendor) # construye la ruta completa al item actual
-            if not os.path.isdir(vendor_path):                # si el item no es carpeta, lo ignora
-                continue  # ignorar archivos sueltos
+        origin_product_folder = "01. OE" if product_clean == "oe" else "02. OE JR"
+        dest_product_folder = "OEA" if product_clean == "oe" else "OE JR"
 
-            # Buscar carpeta del año origen
-            year_folder_src = None                            # inicializa variable para guardar el nombre de la carpeta del año encontrado
-            year_re = re.compile(rf".*{year}.*")              # regex para encontrar cualquier carpeta que contenga el año (flexible: "2025", "Año 2025", etc.)
-            for entry in os.listdir(vendor_path):             # recorre entradas dentro del vendor
-                full_entry = os.path.join(vendor_path, entry) # ruta completa de la entrada
-                if os.path.isdir(full_entry) and year_re.match(entry):  # si es carpeta y su nombre coincide con la regex
-                    year_folder_src = entry                   # guarda el nombre de la carpeta del año
-                    break                                     # sale del bucle al encontrar la primera coincidencia
-            if not year_folder_src:                           # si no se encontró carpeta de año, sigue al siguiente vendor
+        print(f"[INFO] Carpeta de producto origen esperada: {origin_product_folder}")
+        print(f"[INFO] Carpeta de producto destino esperada: {dest_product_folder}\n")
+
+        # 2. Recorrer carpetas en BASE_PATH
+        print(f"[INFO] Leyendo carpetas en origen BASE_PATH:\n{cls.BASE_PATH}\n")
+
+        for vendor_folder in os.listdir(cls.BASE_PATH):
+            vendor_path = os.path.join(cls.BASE_PATH, vendor_folder)
+            print(f"[CHECK] Revisando folder: {vendor_folder}")
+
+            if not os.path.isdir(vendor_path):
+                print("   - No es carpeta, se ignora.")
                 continue
 
-            # Carpeta mes origen (formato con guion)
-            path_month = os.path.join(vendor_path, year_folder_src, month_folder_src)  # arma la ruta a la carpeta del mes en el origen
-            if not os.path.isdir(path_month):                 # si no existe la carpeta mes en el origen, pasa al siguiente vendor
+            # 3. Buscar año
+            year_folder_name = f"Año {year}"
+            year_folder_path = os.path.join(vendor_path, year_folder_name)
+            print(f"   > Buscando carpeta de año: {year_folder_name}")
+
+            if not os.path.isdir(year_folder_path):
+                print("     ✖ No existe esta carpeta de año, continuar con siguiente vendor\n")
                 continue
 
-            # Entrar a "01. OE"
-            oe_path = os.path.join(path_month, "01. OE")      # ruta esperada donde está el summary dentro del mes origen
-            if not os.path.isdir(oe_path):                    # si no existe, saltar vendor
-                continue
+            print("     ✔ Carpeta de año encontrada.")
 
-            # Entrar a "05. Certificates (CT) and Closures"
-            summary_folder = os.path.join(oe_path, "05. Certificates (CT) and Closures")  # carpeta donde se busca el archivo Summary
-            if not os.path.isdir(summary_folder):             # si no existe la carpeta de summary, saltar vendor
-                continue
+            # 4. Buscar mes
+            target_month_prefix = f"{month:02d}-"
+            print(f"   > Buscando carpeta de mes con prefijo: {target_month_prefix}")
 
-            # Buscar archivo Summary
-            summary_file = None                               # variable para almacenar nombre de archivo encontrado
-            for f in os.listdir(summary_folder):              # recorrer archivos en la carpeta de summary
-                if os.path.isfile(os.path.join(summary_folder, f)) \
-                and "SUMMARY" in f.upper() \
-                and f.lower().endswith((".xls", ".xlsx", ".xlsm")):  # filtro: que sea archivo y contenga "SUMMARY" y tenga extensión Excel
-                    summary_file = f                          # asigna el primer archivo que cumple la condición
-                    break                                     # rompe tras encontrar el primer match
-
-            if summary_file is None:                          # si no encontró summary en esa carpeta
-                print(f'El documento de cierre de "{vendor}" no está disponible aun.')  # informa y continúa con siguiente vendor
-                continue
-
-            summary_path = os.path.join(summary_folder, summary_file)  # ruta completa al archivo summary encontrado
-
-            # --------------------------------------------------------
-            # EXTRAER summary SEGÚN TU REGLA
-            # --------------------------------------------------------
-            name_no_ext = os.path.splitext(summary_file)[0]   # quita la extensión para analizar el nombre
-            try:
-                part_after_second_dash = name_no_ext.split("-", 2)[2]  # intenta obtener la parte después del segundo guion
-            except IndexError:
-                print(f"No se pudo leer el vendor destino en el archivo: {summary_file}")  # si el formato no coincide, informa y continua
-                continue
-
-            if "_" in part_after_second_dash:                  # si contiene underscore, elimina el sufijo tras el último underscore
-                summary = part_after_second_dash.rsplit("_", 1)[0]
-            else:
-                summary = part_after_second_dash               # si no, usa la parte tal cual
-
-            summary = summary.rstrip("-_. ").strip()           # limpia caracteres sobrantes al final y espacios
-
-            # --------------------------------------------------------
-            # 🔥 AQUI VA TU NUEVA LÓGICA (respeta todo lo anterior)
-            #
-            # 1. Ir a Vendor.BASE_PATH
-            # 2. Revisar cada vendor
-            # 3. Buscar carpeta cuyo nombre coincida EXACTAMENTE con summary
-            # 4. Dentro de esa misma carpeta, entrar al año
-            # 5. Luego al mes con formato "MM.MonthName"
-            # 6. Luego a "cierres"
-            # --------------------------------------------------------
-
-            # -----------------------------------------------
-            # 🔍 Buscar dentro de cada vendor una carpeta cuyo
-            #     nombre coincida EXACTAMENTE con summary
-            # -----------------------------------------------
-            final_vendor_path = None
-
-            for vendor_folder in os.listdir(Vendor.BASE_PATH):
-                vendor_folder_path = os.path.join(Vendor.BASE_PATH, vendor_folder)
-
-                if not os.path.isdir(vendor_folder_path):
-                    continue
-
-                # Revisar las subcarpetas dentro del vendor
-                for subfolder in os.listdir(vendor_folder_path):
-                    subfolder_path = os.path.join(vendor_folder_path, subfolder)
-
-                    if os.path.isdir(subfolder_path) and subfolder == summary:
-                        final_vendor_path = vendor_folder_path
-                        break
-
-                if final_vendor_path:
+            month_folder = None
+            for folder in os.listdir(year_folder_path):
+                if cls.normalize(folder).startswith(cls.normalize(target_month_prefix)):
+                    month_folder = folder
                     break
 
-            if not final_vendor_path:                         # si no encontró vendor destino exacto
-                print(f'El vendor destino "{summary}" no existe en la ruta destino.')  # informa y continúa
+            if not month_folder:
+                print("     ✖ No se encontró carpeta del mes.\n")
                 continue
 
-            # Buscar carpeta del año en esta misma ruta
-            target_year_path = os.path.join(final_vendor_path, str(year))  # arma ruta al año dentro del vendor destino
-            if not os.path.isdir(target_year_path):          # si no existe la carpeta del año en destino
-                print(f'El vendor destino "{summary}" no tiene carpeta para el año {year}.')  # informa y continúa
+            print(f"     ✔ Carpeta de mes encontrada: {month_folder}")
+
+            month_folder_path = os.path.join(year_folder_path, month_folder)
+
+            # 5. Producto
+            print(f"   > Buscando carpeta del producto: {origin_product_folder}")
+
+            product_folder_path = os.path.join(month_folder_path, origin_product_folder)
+            if not os.path.isdir(product_folder_path):
+                print("     ✖ No existe carpeta de producto.\n")
                 continue
 
-            # Buscar carpeta del mes
-            target_month_path = os.path.join(target_year_path, month_folder_dest, "cierres")  # arma ruta final esperada: MM.MonthName/cierres
-            if not os.path.isdir(target_month_path):        # si no existe la carpeta de cierres en destino
-                print(f"la carpeta para el cierre de '{summary}' no fue encontrada")  # informa y continúa
+            print("     ✔ Carpeta de producto encontrada.")
+
+            # 6. 02. Insertion orders
+            print("   > Entrando a carpeta '02. Insertion orders'")
+
+            insertion_orders_path = os.path.join(product_folder_path, "02. Insertion orders")
+            if not os.path.isdir(insertion_orders_path):
+                print("     ✖ No existe '02. Insertion orders'.\n")
                 continue
 
-            # Copiar archivo al destino final
-            destination = os.path.join(target_month_path, summary_file)  # ruta destino final del archivo
+            print("     ✔ Carpeta '02. Insertion orders' encontrada.")
+
+            # 7. Buscar archivos
+            print("   > Listando archivos en carpeta de inserción...")
+
+            all_files = [
+                f for f in os.listdir(insertion_orders_path)
+                if os.path.isfile(os.path.join(insertion_orders_path, f))
+            ]
+
+            print(f"     ✔ {len(all_files)} archivos encontrados.")
+
+            if not all_files:
+                print("     ✖ No hay archivos, continuar.\n")
+                continue
+
+            # 8. versión = cantidad de archivos
+            total_files = len(all_files)
+            version_to_copy = f"{total_files}."
+
+            print(f"   > Versión esperada a copiar: {version_to_copy}")
+
+            # 9. Buscar archivo correcto
+            print("   > Buscando archivo que coincida con la versión y vendor...")
+
+            file_to_copy = None
+            for file in all_files:
+                if cls.normalize(file).startswith(cls.normalize(version_to_copy)):
+                    print(f"     - Candidato encontrado: {file}")
+
+                    parts = file.split()
+
+                    try:
+                        if product_clean == "oe":
+                            # Unir todas las palabras del vendor
+                            vendor_in_file = " ".join(parts[4:])
+                        else:
+                            vendor_in_file = " ".join(parts[5:])
+
+                        # Quitar extensión (.xlsm, .xlsx, etc.)
+                        vendor_in_file = os.path.splitext(vendor_in_file)[0]
+                    except IndexError:
+                        print("       ✖ Error analizando nombre del archivo.")
+                        continue
+
+
+                    print(f"       > Vendor extraído del archivo: {vendor_in_file}")
+
+                    if cls.normalize(vendor_in_file) == vendor_name_clean:
+                        print("       ✔ Coincidencia encontrada con el vendor solicitado.")
+                        file_to_copy = file
+                        break
+                    else:
+                        print("       ✖ Vendor no coincide.")
+
+            if not file_to_copy:
+                print("     ✖ No se encontró un archivo que coincida con vendor y versión.\n")
+                continue
+
+            print(f"     ✔ Archivo final a copiar: {file_to_copy}\n")
+
+            # 10. Ruta origen
+            origin_file_path = os.path.join(insertion_orders_path, file_to_copy)
+            print(f"[INFO] Ruta completa del archivo origen:\n{origin_file_path}\n")
+
+            # 11. Destino
+            print("\n[INFO] Buscando ruta destino en Vendor.BASE_PATH...\n")
+
+            dest_base = Vendor.BASE_PATH
+            print(f"[INFO] Ruta base destino: {dest_base}")
+
+            dest_vendor_folder = None
+            for folder in os.listdir(dest_base):
+                if cls.normalize(folder) == vendor_name_clean:
+                    dest_vendor_folder = folder
+                    break
+
+            if not dest_vendor_folder:
+                print("❌ No existe carpeta destino del vendor.\n")
+                return
+
+            print(f"✔ Carpeta destino del vendor: {dest_vendor_folder}")
+
+            dest_vendor_path = os.path.join(dest_base, dest_vendor_folder)
+
+            # Año destino
+            dest_year_path = os.path.join(dest_vendor_path, str(year))
+            print(f"> Buscando carpeta año destino: {dest_year_path}")
+
+            if not os.path.isdir(dest_year_path):
+                print("❌ No existe carpeta destino del año.\n")
+                return
+
+            print("✔ Carpeta año destino encontrada.")
+
+            # Mes destino formato "11.November"
+            print("> Buscando carpeta de mes destino...")
+
+            month_prefix_point = f"{month:02d}."
+            dest_month_folder = None
+            for folder in os.listdir(dest_year_path):
+                if cls.normalize(folder).startswith(cls.normalize(month_prefix_point)):
+                    dest_month_folder = folder
+                    break
+
+            if not dest_month_folder:
+                print("❌ No existe carpeta destino del mes.\n")
+                return
+
+            print(f"✔ Carpeta mes destino encontrada: {dest_month_folder}")
+
+            dest_month_path = os.path.join(dest_year_path, dest_month_folder)
+
+            # ordenes
+            orders_path = os.path.join(dest_month_path, "ordenes")
+            print("> Buscando carpeta 'ordenes'...")
+
+            if not os.path.isdir(orders_path):
+                print("❌ No existe carpeta 'ordenes'.\n")
+                return
+
+            print("✔ Carpeta 'ordenes' encontrada.")
+
+            # Producto destino
+            final_dest_path = os.path.join(orders_path, dest_product_folder)
+            print(f"> Buscando carpeta destino final: {final_dest_path}")
+
+            if not os.path.isdir(final_dest_path):
+                print("❌ No existe carpeta final del producto.\n")
+                return
+
+            print("✔ Carpeta final destino encontrada.\n")
+
+            # 12. COPIAR ARCHIVO
+            print(">>> COPIANDO ARCHIVO...")
+
+            shutil.copy2(origin_file_path, final_dest_path)
+
+            print(f"✅ Archivo copiado exitosamente a:\n{final_dest_path}")
+            print("================ FIN DEL PROCESO ====================\n")
+            return
+
+        print("❌ No se encontró ningún archivo coincidente con el vendor solicitado.\n")
+
+    @classmethod
+    def copy_latest_orders_batch(cls, vendors: list, product: str, year: int, month: int):
+        """
+        Ejecuta copy_latest_order para varios vendors.
+        """
+        print("\n=========== INICIO PROCESO POR LOTES ===========\n")
+        
+        for vendor in vendors:
+            print(f"\n>>> Ejecutando para vendor: {vendor}")
+            print("---------------------------------------------")
+            
             try:
-                shutil.copy2(summary_path, destination)      # copia preservando metadatos; sobreescribe si ya existe
-                print(f"cierre de '{summary}' guardado con exito")  # confirma éxito
-            except PermissionError:
-                print(f"❌ Permiso denegado al copiar a: {destination}")  # manejo específico de permiso denegado
+                cls.copy_latest_order(vendor, product, year, month)
             except Exception as e:
-                print(f"❌ Error copiando archivo: {e}")         # manejo genérico de errores al copiar
-
+                print(f"❌ Error inesperado con vendor {vendor}: {e}")
+        
+        print("\n=========== FIN PROCESO POR LOTES ===========\n")
+            
 def main():
-
-    vendor = Vendor("sony")
+    vendor = Vendor("MGG")
     vendor.update_structure()
-    manager_vendors = ManagerVendors()
-    manager_vendors.update_all_vendors_month(2025,9)
-    manager_vendors.send_vendor_summary(2025,9)
-
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+ 
