@@ -1,9 +1,8 @@
 # Importar módulos estándar y clases auxiliares
 import os                      # operaciones de sistema de archivos (path, exists, listdir, makedirs, etc.)
-import re                      # expresiones regulares para buscar carpetas/strings
 import shutil                  # funciones para copiar archivos (copy2)
 import calendar                # obtener nombres de meses y utilidades relacionadas
-from slack_bot import SlackNotifier  # clase opcional para notificar via Slack (si está disponible)
+from slack_bot import NOTIFIER  # importar el notificador de Slack preconfigurado
 from datetime import datetime # obtener fecha y hora actuales
 
 
@@ -13,7 +12,7 @@ from datetime import datetime # obtener fecha y hora actuales
 class Vendor:
     BASE_PATH = r"G:\Unidades compartidas\Vendor_files"  # Ruta base donde se guardan los vendors destino
 
-    def __init__(self, name, notifier: SlackNotifier = None):
+    def __init__(self, name):
         """
         Inicializa un nuevo vendor con su nombre y ruta base.
         """
@@ -22,7 +21,7 @@ class Vendor:
         self.vendor_path = os.path.join(Vendor.BASE_PATH, name)  # Ruta completa del vendor (base + nombre)
         self.current_year = datetime.now().year              # Año actual (int)
         self.current_month = datetime.now().month            # Mes actual (int)
-        self.notifier = notifier   # notificador de Slack opcional (puede ser None)
+        self.notifier = NOTIFIER   # notificador de Slack opcional (puede ser None)
 
 
     # ---------------------------------------------------------
@@ -36,16 +35,12 @@ class Vendor:
             os.makedirs(self.vendor_path)                    # Crear la carpeta (incluyendo padres si aplica)
             msg = f"Vendor '{self.name}' creado con éxito."  # Mensaje de éxito
             print(msg)                                       # Mostrar mensaje por consola
-
-            if self.notifier:                                # Si se proporcionó un notificador Slack
-                self.notifier.send(msg)                      # Enviar notificación por Slack
+            return True
 
         else:                                               # Si la carpeta ya existía
             msg = f"⚠️ La carpeta del vendor '{self.name}' ya existe."  # Mensaje de aviso
             print(msg)                                       # Mostrar aviso por consola
-
-            if self.notifier:                                # Enviar aviso por Slack si está configurado
-                self.notifier.send(msg)
+            return False
 
 
     # ---------------------------------------------------------
@@ -110,19 +105,34 @@ class Vendor:
         lo que falte (vendor, año y mes actual).
         """
         # 1. Crear carpeta del vendor
-        self.create_vendor()                                # Crear carpeta principal si hace falta
+        vendor_created = self.create_vendor()                                # Crear carpeta principal si hace falta
 
         # 3. Crear carpeta del mes actual y sus subcarpetas
         self.create_month_structure()                       # Crear año/mes/ordenes/cierres
 
-        print(f"✅ Estructura actualizada para {self.name}: {self.current_year}/{self.current_month:02d}")  # Mensaje resumen
+        # Crear nombre del mes en formato "MM.MonthName"
+        month_folder = f"{self.current_month:02d}.{calendar.month_name[self.current_month]}"
+
+        # Mensaje final resumen
+        if vendor_created:
+            msg = f"""🗂️ Vendor '{self.name}' creado con éxito:
+        -    Estructura inicial creada para el año: {self.current_year}
+        -    mes: {month_folder}"""
+            # enviar a Slack este mensaje
+            print(msg)
+        else:
+            msg = f"""⚠️ Vendor '{self.name}' ya existía."""
+
+            # Si existe Slack, enviar el mensaje
+            if self.notifier:
+                self.notifier.send(msg)
 
 
     # ---------------------------------------------------------
     # Crear estructura de un mes y año personalizados en un solo vendor, esto se usara en el manager de vendors
     # para crear la estructura de un mes/año especifico en todos los vendors
     # ---------------------------------------------------------
-    def create_custom_month_structure(self, year, month):
+    def create_custom_month_structure(self,vendor_name, year, month):
         """
         Crea la estructura de carpetas para un año y mes específicos
         """
@@ -148,9 +158,15 @@ class Vendor:
 
         if not os.path.exists(month_path):                   # Si la carpeta del mes no existe
             os.makedirs(month_path)                          # Crear la carpeta del mes
-            print(f"📁 Carpeta creada para el mes: {month_folder}")  # Mensaje de creación
+            msg = f"📁 La carpeta para  el vendor {vendor_name} del mes: {month_folder}"
+            print(msg)  # Mensaje de creación exitosa
+            if self.notifier:
+                self.notifier.send(msg)
         else:
-            print(f"✅ Carpeta del mes {month_folder} ya existe.")    # Mensaje si ya existía
+            msg = f"⚠️ Carpeta del vendor {vendor_name} para el mes {month_folder} ya existe."
+            print(msg)    # Mensaje si ya existía
+            if self.notifier:
+                self.notifier.send(msg)
 
         # Subcarpetas internas (idéntico a tu estructura actual)
         orders_path = os.path.join(month_path, "ordenes")    # Ruta a 'ordenes' dentro del mes
@@ -172,7 +188,7 @@ class Vendor:
 # ---------------------------------------------------------
 class ManagerVendors:
     # Referenciar la misma ruta base definida en el origen (Marketing Team)
-    BASE_PATH = r"G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV"
+    BASE_PATH = r"G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV" 
 
     @classmethod
     def update_all_vendors_month(cls, year, month):
@@ -188,7 +204,7 @@ class ManagerVendors:
             if os.path.isdir(vendor_path):                    # Si es carpeta (vendor)
                 vendor = Vendor(vendor_name)                  # Crear instancia temporal de Vendor
                 try:
-                    vendor.create_custom_month_structure(year, month)  # Crear estructura personalizada
+                    vendor.create_custom_month_structure(vendor_name,year, month)  # Crear estructura personalizada
                 except Exception as e:
                     print(f"❌ Error al actualizar {vendor_name}: {e}") # Informar error si falla
                 else:
@@ -451,18 +467,18 @@ class ManagerVendors:
 
 
 
-def main():
-    vendor = Vendor("NBC Viacom")            
-    vendor.update_structure()
+# def main():
+#     vendor = Vendor("NBC Viacom")            
+#     vendor.update_structure()
 
-    manager = ManagerVendors()
-    manager.copy_latest_orders_batch(["NBC Viacom", "Sony", "AMC"],"oe", 2025, 11)
+#     manager = ManagerVendors()
+#     manager.copy_latest_orders_batch(["NBC Viacom", "Sony", "AMC"],"oe", 2025, 11)
 
-    manager.update_all_vendors_month(2026, 2)
+#     manager.update_all_vendors_month(2026, 2)
 
 
-if __name__ == "__main__":
-    main()                             
+# if __name__ == "__main__":
+#     main()                             
 
 
 
