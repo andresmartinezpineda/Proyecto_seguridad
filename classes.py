@@ -117,9 +117,11 @@ class Vendor:
         if vendor_created:
             msg = f"""🗂️ Vendor '{self.name}' creado con éxito:
         -    Estructura inicial creada para el año: {self.current_year}
-        -    mes: {month_folder}"""
+        -    Mes: {month_folder}"""
             # enviar a Slack este mensaje
             print(msg)
+            if self.notifier:
+                self.notifier.send(msg)
         else:
             msg = f"""⚠️ Vendor '{self.name}' ya existía."""
 
@@ -158,7 +160,9 @@ class Vendor:
 
         if not os.path.exists(month_path):                   # Si la carpeta del mes no existe
             os.makedirs(month_path)                          # Crear la carpeta del mes
-            msg = f"📁 La carpeta para  el vendor {vendor_name} del mes: {month_folder}"
+            msg = f"""📁✅ Se ha creado carpeta para el vendor: {vendor_name}
+            En el año: ' {year} '
+            En el mes: ' {month_folder} ' exitosamente."""
             print(msg)  # Mensaje de creación exitosa
             if self.notifier:
                 self.notifier.send(msg)
@@ -189,6 +193,8 @@ class Vendor:
 class ManagerVendors:
     # Referenciar la misma ruta base definida en el origen (Marketing Team)
     BASE_PATH = r"G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV" 
+
+    notifier = NOTIFIER   # notificador de Slack opcional (puede ser None)
 
     @classmethod
     def update_all_vendors_month(cls, year, month):
@@ -393,7 +399,7 @@ class ManagerVendors:
 
             if not os.path.isdir(dest_year_path):                                       # Si no existe carpeta del año en destino
                 print("❌ No existe carpeta destino del año.\n")                         # Mensaje de error
-                return                                                                   # Salir
+                return f"❌ En el vendor '{vendor_name}' destino no existe la carpeta del año {year}.\n"                                                                  # Salir
 
             print("✔ Carpeta año destino encontrada.")                                   # Confirmación año encontrado
 
@@ -409,7 +415,7 @@ class ManagerVendors:
 
             if not dest_month_folder:                                                    # Si no se encontró carpeta mes destino
                 print("❌ No existe carpeta destino del mes.\n")                         # Mensaje de error
-                return                                                                   # Salir
+                return f"❌ En el vendor '{vendor_name}' no existe el mes {month}"                                                                  # Salir
 
             print(f"✔ Carpeta mes destino encontrada: {dest_month_folder}")               # Informar carpeta mes destino encontrada
 
@@ -421,7 +427,7 @@ class ManagerVendors:
 
             if not os.path.isdir(orders_path):                                           # Si no existe carpeta 'ordenes'
                 print("❌ No existe carpeta 'ordenes'.\n")                                # Mensaje de error
-                return                                                                   # Salir
+                return f"❌ En el vendor | {vendor_name} | año '{year}' | mes {month} | no existe la carpeta ordenes"                                                                  # Salir
 
             print("✔ Carpeta 'ordenes' encontrada.")                                     # Confirmar existencia
 
@@ -431,7 +437,7 @@ class ManagerVendors:
 
             if not os.path.isdir(final_dest_path):                                       # Si no existe carpeta de producto destino
                 print("❌ No existe carpeta final del producto.\n")                       # Mensaje de error
-                return                                                                   # Salir
+                return f"❌ En el vendor | {vendor_name} | mes {month} | no existe la carpeta '{product}' debes eliminar la carpeta de este mes y crearla de nuevo"                                                                  # Salir
 
             print("✔ Carpeta final destino encontrada.\n")                               # Confirmación final
 
@@ -442,10 +448,12 @@ class ManagerVendors:
 
             print(f"✅ Archivo copiado exitosamente a:\n{final_dest_path}")               # Confirmación de copia
             print("================ FIN DEL PROCESO ====================\n")              # Mensaje final de proceso
-            return                                                                       # Salir del método al terminar exitosamente
+            return f"✅ El vendor '{vendor_name}' se ha actualizado correctamente de version para el año '{year}' y el mes '{month}' .\n"  # Mensaje de éxito
+
 
         # Si se recorrió todo origen y no se encontró archivo coincidente para el vendor solicitado
         print("❌ No se encontró ningún archivo coincidente con el vendor solicitado.\n")
+        return f"❌ No se encontró ningún archivo coincidente con el vendor '{vendor_name}' en la carpeta destino.\n"
 
 
     @classmethod
@@ -459,7 +467,9 @@ class ManagerVendors:
             print(f"\n>>> Ejecutando para vendor: {vendor}")        # Mensaje por vendor
             print("---------------------------------------------")
             try:
-                cls.copy_latest_order(vendor, product, year, month)  # Llamada al proceso para cada vendor
+                result = cls.copy_latest_order(vendor, product, year, month)  # Llamada al proceso para cada vendor
+                print (result)
+                cls.notifier.send(result)
             except Exception as e:
                 print(f"❌ Error inesperado con vendor {vendor}: {e}") # Capturar e informar errores por vendor
 
