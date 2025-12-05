@@ -1,5 +1,7 @@
 import tkinter as tk
 from interfaz_subir_ordenes import open_upload_orders
+from interfaz_crear_vendor import create_vendor_window
+
 
 
 def open_create_vendor():
@@ -39,8 +41,12 @@ tk.Button(
     **button_style
 ).pack(pady=25)
 
-tk.Button(frame, text="CREAR VENDOR",
-          command=open_create_vendor, **button_style).pack(pady=25)
+tk.Button(
+    frame,
+    text="CREAR VENDOR",
+    command=lambda: (create_vendor_window(root), root.withdraw()),
+    **button_style
+).pack(pady=25)
 
 tk.Button(frame, text="ACTUALIZAR MESES",
           command=open_update_months, **button_style).pack(pady=25)
