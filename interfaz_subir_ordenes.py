@@ -121,6 +121,30 @@ def open_upload_orders(root):
 
     load_vendor_buttons(button_frame)
 
+    # ------------------ Checkbox "Seleccionar todos" ------------------
+    select_all_var = tk.BooleanVar()
+    def select_all_vendors():
+        if select_all_var.get():  # Si está marcado
+            for name in vendor_buttons:
+                if name not in selected_vendors:
+                    selected_vendors.append(name)
+                    vendor_buttons[name].config(bg="#87CEFA")
+        else:  # Si se desmarca
+            for name in vendor_buttons:
+                if name in selected_vendors:
+                    selected_vendors.remove(name)
+                    vendor_buttons[name].config(bg="#d1d1d1")
+
+    tk.Checkbutton(
+        win,
+        text="select all",
+        variable=select_all_var,
+        command=select_all_vendors,
+        anchor="e",          # mantiene la alineación a la derecha
+        padx=20,
+        justify="left"      # texto a la derecha del contenido
+    ).pack(anchor="e", padx=20)
+
     # -------------------------------------------------------
     # NUEVA FUNCIÓN PARA EJECUTAR EL MÉTODO
     # -------------------------------------------------------
