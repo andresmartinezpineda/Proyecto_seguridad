@@ -1,20 +1,7 @@
 import tkinter as tk
 from interfaz_subir_ordenes import open_upload_orders
 from interfaz_crear_vendor import create_vendor_window
-
-
-
-def open_create_vendor():
-    win = tk.Toplevel(root)
-    win.title("Crear Vendor")
-    tk.Label(win, text="Aquí va la interfaz para crear vendor").pack(padx=20, pady=20)
-
-
-def open_update_months():
-    win = tk.Toplevel(root)
-    win.title("Actualizar Meses")
-    tk.Label(win, text="Aquí va la interfaz para actualizar meses").pack(padx=20, pady=20)
-
+from interfaz_actualizar_meses import open_update_months
 
 root = tk.Tk()
 root.title("Panel Principal")
@@ -31,7 +18,7 @@ button_style = {
     "fg": "black",
     "borderwidth": 2,
     "relief": "solid",
-    "font": ("Arial", 14, "bold")
+    "font": ("Arial", 14, "bold"),
 }
 
 tk.Button(
@@ -48,7 +35,12 @@ tk.Button(
     **button_style
 ).pack(pady=25)
 
-tk.Button(frame, text="ACTUALIZAR MESES",
-          command=open_update_months, **button_style).pack(pady=25)
+tk.Button(
+    frame,
+    text="ACTUALIZAR MESES",
+    command=lambda: (open_update_months(root), root.withdraw()),
+    **button_style
+).pack(pady=25)
+
 
 root.mainloop()
