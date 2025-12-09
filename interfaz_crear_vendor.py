@@ -2,6 +2,7 @@ import tkinter as tk
 import sys
 from tkinter import messagebox
 from classes import Vendor
+from classes import ConsoleRedirect
 
 
 def create_vendor_window(root):
@@ -12,19 +13,6 @@ def create_vendor_window(root):
     win.title("Crear nuevo vendor")
     win.geometry("600x500")
     win.resizable(False, False)
-
-    class RedirectConsole:
-        def __init__(self, text_widget):
-            self.text_widget = text_widget
-
-        def write(self, string):
-            self.text_widget.config(state="normal")
-            self.text_widget.insert("end", string)
-            self.text_widget.see("end")
-            self.text_widget.config(state="disabled")
-
-        def flush(self):
-            pass
 
     def volver():
         win.destroy()
@@ -139,5 +127,5 @@ def create_vendor_window(root):
     )
     console_text.pack()
 
-    sys.stdout = RedirectConsole(console_text)
-    sys.stderr = RedirectConsole(console_text)
+    sys.stdout = ConsoleRedirect(console_text)
+    sys.stderr = ConsoleRedirect(console_text)

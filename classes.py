@@ -1,4 +1,5 @@
 # Importar módulos estándar y clases auxiliares
+import sys                     # para redirigir stdout/stderr
 import os                      # operaciones de sistema de archivos (path, exists, listdir, makedirs, etc.)
 import shutil                  # funciones para copiar archivos (copy2)
 import calendar                # obtener nombres de meses y utilidades relacionadas
@@ -475,20 +476,33 @@ class ManagerVendors:
 
         print("\n=========== FIN PROCESO POR LOTES ===========\n")     # Mensaje final batch
 
+class ConsoleRedirect:
+    """
+    Clase reutilizable para redirigir stdout y stderr
+    a un widget Text de Tkinter.
+    """
+    def __init__(self, text_widget):
+        self.text_widget = text_widget
 
+    def write(self, string):
+        self.text_widget.config(state="normal")
+        self.text_widget.insert("end", string)
+        self.text_widget.see("end")
+        self.text_widget.config(state="disabled")
 
-# def main():
-#     vendor = Vendor("NBC Viacom")            
-#     vendor.update_structure()
+    def flush(self):
+        pass
 
-#     manager = ManagerVendors()
-#     manager.copy_latest_orders_batch(["NBC Viacom", "Sony", "AMC"],"oe", 2025, 11)
-
-#     manager.update_all_vendors_month(2026, 2)
-
-
-# if __name__ == "__main__":
-#     main()                             
+    @staticmethod
+    def attach(text_widget):
+        """
+        Ataja stdout y stderr y los envía al text_widget
+        """
+        redirector = ConsoleRedirect(text_widget)
+        sys.stdout = redirector
+        sys.stderr = redirector
+        return redirector
+          
 
 
 

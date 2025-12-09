@@ -1,12 +1,14 @@
 import tkinter as tk
 from classes import ManagerVendors
+import sys
+from classes import ConsoleRedirect
 
 
 def open_update_months(root):
     win = tk.Toplevel(root)
     manager = ManagerVendors()
     win.title("Crear estructura de nuevo año y mes")
-    win.geometry("500x400")
+    win.geometry("600x500")
     win.configure(bg="white")
 
     # Función para validar que solo se escriban números
@@ -103,3 +105,23 @@ def open_update_months(root):
         command=ejecutar_creacion
     )
     create_btn.pack(pady=30)
+
+    console_frame = tk.Frame(win, bg="#d1d1d1", bd=2, relief="solid")
+    console_frame.pack(pady=5, padx=20)
+
+    console_text = tk.Text(
+        console_frame,
+        height=15,       # Más líneas visibles
+        width=60,        # Un poco menos ancho
+        state="disabled",
+        bg="#f0f0f0",
+        fg="black",
+        font=("Consolas", 11),
+        relief="flat",   # Quitar borde interno
+        padx=5,
+        pady=5
+    )
+    console_text.pack()
+
+    sys.stdout = ConsoleRedirect(console_text)
+    sys.stderr = ConsoleRedirect(console_text)
