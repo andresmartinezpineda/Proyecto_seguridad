@@ -1,4 +1,5 @@
 import tkinter as tk
+import sys
 from tkinter import messagebox
 from classes import Vendor
 
@@ -9,8 +10,21 @@ def create_vendor_window(root):
     # -------------------------------------------------------
     win = tk.Toplevel(root)  # Nueva ventana hija
     win.title("Crear nuevo vendor")
-    win.geometry("500x400")
+    win.geometry("600x500")
     win.resizable(False, False)
+
+    class RedirectConsole:
+        def __init__(self, text_widget):
+            self.text_widget = text_widget
+
+        def write(self, string):
+            self.text_widget.config(state="normal")
+            self.text_widget.insert("end", string)
+            self.text_widget.see("end")
+            self.text_widget.config(state="disabled")
+
+        def flush(self):
+            pass
 
     def volver():
         win.destroy()
@@ -124,23 +138,6 @@ def create_vendor_window(root):
         pady=5
     )
     console_text.pack()
-
-
-
-    import sys
-
-    class RedirectConsole:
-        def __init__(self, text_widget):
-            self.text_widget = text_widget
-
-        def write(self, string):
-            self.text_widget.config(state="normal")
-            self.text_widget.insert("end", string)
-            self.text_widget.see("end")
-            self.text_widget.config(state="disabled")
-
-        def flush(self):
-            pass
 
     sys.stdout = RedirectConsole(console_text)
     sys.stderr = RedirectConsole(console_text)

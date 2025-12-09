@@ -1,7 +1,10 @@
 import tkinter as tk
+from classes import ManagerVendors
+
 
 def open_update_months(root):
     win = tk.Toplevel(root)
+    manager = ManagerVendors()
     win.title("Crear estructura de nuevo año y mes")
     win.geometry("500x400")
     win.configure(bg="white")
@@ -15,6 +18,11 @@ def open_update_months(root):
     def volver():
         win.destroy()
         root.deiconify()
+
+    def ejecutar_creacion():
+        year = int(year_entry.get())
+        month = int(month_entry.get())
+        manager.update_all_vendors_month(year, month)
 
 
     # -------------------------
@@ -91,6 +99,7 @@ def open_update_months(root):
         width=20,
         height=2,
         relief="solid",
-        borderwidth=2
+        borderwidth=2,
+        command=ejecutar_creacion
     )
     create_btn.pack(pady=30)
