@@ -80,6 +80,26 @@ def open_upload_orders(root):
     win.title("Subir Órdenes")
     win.geometry("600x650")
 
+    def volver():
+        win.destroy()
+        root.deiconify()
+
+
+    # -------------------------
+    # BOTÓN VOLVER (sin acción aún)
+    # -------------------------
+    back_btn = tk.Button(
+        win,
+        text="⬅ Volver",
+        bg="white",
+        fg="black",
+        borderwidth=0,
+        font=("Arial", 12, "bold"),
+        cursor="hand2",
+        command=volver
+    )
+    back_btn.pack(anchor="nw", padx=10, pady=10)
+
     # -------------------------------------------------------
     # SECCIÓN SUPERIOR
     # -------------------------------------------------------

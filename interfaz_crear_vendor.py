@@ -12,18 +12,25 @@ def create_vendor_window(root):
     win.geometry("500x400")
     win.resizable(False, False)
 
-    def go_back():
-        win.destroy()       # Cierra la ventana actual
-        root.deiconify()    # Muestra la ventana principal
+    def volver():
+        win.destroy()
+        root.deiconify()
 
+
+    # -------------------------
+    # BOTÓN VOLVER (sin acción aún)
+    # -------------------------
     back_btn = tk.Button(
         win,
-        text="←",
+        text="⬅ Volver",
+        bg="white",
+        fg="black",
+        borderwidth=0,
         font=("Arial", 12, "bold"),
-        width=3,
-        command=go_back
+        cursor="hand2",
+        command=volver
     )
-    back_btn.place(x=10, y=10)  # Posición en esquina superior izquierda
+    back_btn.pack(anchor="nw", padx=10, pady=10)
 
 
     # -------------------------------------------------------

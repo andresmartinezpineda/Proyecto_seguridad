@@ -12,6 +12,11 @@ def open_update_months(root):
 
     validar_cmd = win.register(validar_numero)
 
+    def volver():
+        win.destroy()
+        root.deiconify()
+
+
     # -------------------------
     # BOTÓN VOLVER (sin acción aún)
     # -------------------------
@@ -22,9 +27,10 @@ def open_update_months(root):
         fg="black",
         borderwidth=0,
         font=("Arial", 12, "bold"),
-        cursor="hand2"
+        cursor="hand2",
+        command=volver
     )
-    back_btn.pack(anchor="ne", padx=10, pady=10)
+    back_btn.pack(anchor="nw", padx=10, pady=10)
 
     # -------------------------
     # TÍTULO
