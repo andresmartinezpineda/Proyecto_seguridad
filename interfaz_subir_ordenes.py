@@ -77,6 +77,13 @@ def load_vendor_buttons(frame):
 
 def open_upload_orders(root):
     win = tk.Toplevel(root)
+    COLOR_PRIMARY = "#0072CE"        # Azul oficial
+    COLOR_PRIMARY_LIGHT = "#4DA3FF"  # Azul claro
+    COLOR_BG = "#FFFFFF"             # Blanco
+    COLOR_GRAY = "#F2F2F2"           # Gris suave
+    COLOR_TEXT = "#000000"           # Negro
+
+    win.configure(bg=COLOR_BG)
     win.title("Subir Órdenes")
     win.geometry("600x650")
 
@@ -91,52 +98,74 @@ def open_upload_orders(root):
     back_btn = tk.Button(
         win,
         text="⬅ Volver",
-        bg="white",
-        fg="black",
+        bg=COLOR_BG,
+        fg=COLOR_PRIMARY,
+        activeforeground=COLOR_PRIMARY_LIGHT,
+        activebackground=COLOR_BG,
         borderwidth=0,
-        font=("Arial", 12, "bold"),
+        font=("Segoe UI", 12, "bold"),
         cursor="hand2",
         command=volver
     )
+
     back_btn.pack(anchor="nw", padx=10, pady=10)
 
     # -------------------------------------------------------
     # SECCIÓN SUPERIOR
     # -------------------------------------------------------
-    top_frame = tk.Frame(win)
+    top_frame = tk.Frame(win, bg=COLOR_BG)
     top_frame.pack(pady=10)
 
     # Año
-    tk.Label(top_frame, text="Año:").grid(row=0, column=0, padx=5)
+    tk.Label(top_frame, text="Año:", bg=COLOR_BG, fg=COLOR_TEXT, font=("Segoe UI", 11)).grid(row=0, column=0, padx=5)
     vcmd = (win.register(only_numbers), "%S")
 
     entry_year = tk.Entry(
-        top_frame, width=10,
+        top_frame,
+        width=10,
+        bg=COLOR_GRAY,
+        relief="flat",
+        font=("Segoe UI", 11),
+        justify="center",
         validate="key", validatecommand=vcmd
     )
     entry_year.grid(row=0, column=1, padx=5)
 
     # Mes
-    tk.Label(top_frame, text="Mes:").grid(row=0, column=2, padx=5)
+    tk.Label(top_frame, text="Mes:", bg=COLOR_BG, fg=COLOR_TEXT, font=("Segoe UI", 11)).grid(row=0, column=2, padx=5)
     entry_month = tk.Entry(
-        top_frame, width=10,
-        validate="key", validatecommand=vcmd
+        top_frame,
+        width=10,
+        bg=COLOR_GRAY,
+        relief="flat",
+        font=("Segoe UI", 11),
+        justify="center",
+        validate="key",
+        validatecommand=vcmd
     )
     entry_month.grid(row=0, column=3, padx=5)
 
     # Tipo OE / OE JR
-    tk.Label(top_frame, text="Tipo:").grid(row=0, column=4, padx=5)
+    tk.Label(top_frame,bg=COLOR_BG, text="Tipo:").grid(row=0, column=4, padx=5)
 
     selected_type = tk.StringVar()
     selected_type.set("")   # dejar vacío al inicio
 
     dropdown = tk.OptionMenu(top_frame, selected_type, "OE", "OE JR")
+    dropdown.config(
+        bg=COLOR_GRAY,
+        fg=COLOR_TEXT,
+        font=("Segoe UI", 10),
+        relief="flat",
+        highlightthickness=0,
+        activebackground=COLOR_PRIMARY_LIGHT
+    )
     dropdown.grid(row=0, column=5, padx=5)
 
     # -------------------------------------------------------
     # CARGAR VENDORS (SIN CAMBIOS)
     # -------------------------------------------------------
-    button_frame = tk.Frame(win)
+    button_frame = tk.Frame(win,bg=COLOR_BG)
     button_frame.pack(pady=20)
 
     load_vendor_buttons(button_frame)
@@ -157,6 +186,10 @@ def open_upload_orders(root):
 
     tk.Checkbutton(
         win,
+        bg=COLOR_BG,
+        fg=COLOR_PRIMARY,
+        selectcolor=COLOR_GRAY,
+        font=("Segoe UI", 11),
         text="select all",
         variable=select_all_var,
         command=select_all_vendors,
@@ -204,5 +237,14 @@ def open_upload_orders(root):
     tk.Button(
         win,
         text="Subir órdenes",
-        command=upload_orders  # AHORA EJECUTA TU MÉTODO
-    ).pack(pady=10)
+        command=upload_orders,
+        bg=COLOR_PRIMARY,
+        fg="white",
+        font=("Segoe UI", 13, "bold"),
+        activebackground=COLOR_PRIMARY_LIGHT,
+        activeforeground="white",
+        relief="flat",
+        cursor="hand2",
+        height=2,
+        width=20
+    ).pack(pady=15)

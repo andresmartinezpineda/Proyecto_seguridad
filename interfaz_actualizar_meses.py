@@ -3,13 +3,18 @@ from classes import ManagerVendors
 import sys
 from classes import ConsoleRedirect
 
+# --- PALETA TIPO OPEN ENGLISH ---
+COLOR_BG = "#FFFFFF"
+COLOR_PRIMARY = "#007BFF"
+COLOR_ACCENT = "#00A3E0"
+COLOR_TEXT = "#003B5C"
 
 def open_update_months(root):
     win = tk.Toplevel(root)
     manager = ManagerVendors()
     win.title("Crear estructura de nuevo año y mes")
     win.geometry("600x500")
-    win.configure(bg="white")
+    win.configure(bg=COLOR_BG)
 
     # Función para validar que solo se escriban números
     def validar_numero(texto):
@@ -33,13 +38,14 @@ def open_update_months(root):
     back_btn = tk.Button(
         win,
         text="⬅ Volver",
-        bg="white",
-        fg="black",
+        bg=COLOR_BG,
+        fg=COLOR_TEXT,
         borderwidth=0,
-        font=("Arial", 12, "bold"),
+        font=("Segoe UI", 12, "bold"),
         cursor="hand2",
         command=volver
     )
+
     back_btn.pack(anchor="nw", padx=10, pady=10)
 
     # -------------------------
@@ -48,8 +54,9 @@ def open_update_months(root):
     title_label = tk.Label(
         win,
         text="Crear estructura de nuevo año y mes",
-        font=("Arial", 18, "bold"),
-        bg="white"
+        font=("Segoe UI", 22, "bold"),
+        bg=COLOR_BG,
+        fg=COLOR_TEXT
     )
     title_label.pack(pady=20)
 
@@ -57,17 +64,25 @@ def open_update_months(root):
     # INPUT PARA AÑO
     # -------------------------
     year_label = tk.Label(
-        win, text="Año por crear", bg="white",
-        font=("Arial", 12)
+        win, text="Año por crear",
+        bg=COLOR_BG,
+        fg=COLOR_TEXT,
+        font=("Segoe UI", 12)
     )
+
     year_label.pack()
 
     year_entry = tk.Entry(
         win,
         validate="key",
         validatecommand=(validar_cmd, "%P"),
-        font=("Arial", 14),
-        width=20
+        font=("Segoe UI", 14),
+        width=20,
+        bg="#F7F9FC",
+        fg=COLOR_TEXT,
+        relief="solid",
+        bd=1,
+        justify="center"
     )
     year_entry.pack(pady=5)
 
@@ -75,17 +90,25 @@ def open_update_months(root):
     # INPUT PARA MES
     # -------------------------
     month_label = tk.Label(
-        win, text="Mes por crear", bg="white",
-        font=("Arial", 12)
+        win, text="Mes por crear",
+        bg=COLOR_BG,
+        fg=COLOR_TEXT,
+        font=("Segoe UI", 12)
     )
+
     month_label.pack()
 
     month_entry = tk.Entry(
         win,
         validate="key",
         validatecommand=(validar_cmd, "%P"),
-        font=("Arial", 14),
-        width=20
+        font=("Segoe UI", 14),
+        width=20,
+        bg="#F7F9FC",
+        fg=COLOR_TEXT,
+        relief="solid",
+        bd=1,
+        justify="center"
     )
     month_entry.pack(pady=5)
 
@@ -95,9 +118,13 @@ def open_update_months(root):
     create_btn = tk.Button(
         win,
         text="Crear",
-        bg="#C0BFBF",
-        fg="black",
-        font=("Arial", 14, "bold"),
+        bg=COLOR_PRIMARY,
+        fg="white",
+        activebackground=COLOR_ACCENT,
+        activeforeground="white",
+        font=("Segoe UI", 14, "bold"),
+        bd=0,
+        cursor="hand2",
         width=20,
         height=2,
         relief="solid",
@@ -106,7 +133,7 @@ def open_update_months(root):
     )
     create_btn.pack(pady=30)
 
-    console_frame = tk.Frame(win, bg="#d1d1d1", bd=2, relief="solid")
+    console_frame = tk.Frame(win, bg=COLOR_ACCENT, bd=2, relief="flat")
     console_frame.pack(pady=5, padx=20)
 
     console_text = tk.Text(
@@ -114,10 +141,10 @@ def open_update_months(root):
         height=15,       # Más líneas visibles
         width=60,        # Un poco menos ancho
         state="disabled",
-        bg="#f0f0f0",
-        fg="black",
+        bg="#F0F4F8",
+        fg=COLOR_TEXT,
+        relief="flat",
         font=("Consolas", 11),
-        relief="flat",   # Quitar borde interno
         padx=5,
         pady=5
     )

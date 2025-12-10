@@ -4,6 +4,12 @@ from tkinter import messagebox
 from classes import Vendor
 from classes import ConsoleRedirect
 
+# --- PALETA TIPO OPEN ENGLISH ---
+COLOR_BG = "#FFFFFF"
+COLOR_PRIMARY = "#007BFF"
+COLOR_ACCENT = "#00A3E0"
+COLOR_TEXT = "#003B5C"
+
 
 def create_vendor_window(root):
     # -------------------------------------------------------
@@ -13,11 +19,11 @@ def create_vendor_window(root):
     win.title("Crear nuevo vendor")
     win.geometry("600x500")
     win.resizable(False, False)
+    win.configure(bg=COLOR_BG)
 
     def volver():
         win.destroy()
         root.deiconify()
-
 
     # -------------------------
     # BOTÓN VOLVER (sin acción aún)
@@ -25,10 +31,10 @@ def create_vendor_window(root):
     back_btn = tk.Button(
         win,
         text="⬅ Volver",
-        bg="white",
-        fg="black",
+        bg=COLOR_BG,
+        fg=COLOR_TEXT,
         borderwidth=0,
-        font=("Arial", 12, "bold"),
+        font=("Segoe UI", 12, "bold"),
         cursor="hand2",
         command=volver
     )
@@ -38,13 +44,28 @@ def create_vendor_window(root):
     # -------------------------------------------------------
     # TÍTULO GRANDE ARRIBA
     # -------------------------------------------------------
-    title_label = tk.Label(win, text="Crear nuevo vendor", font=("Arial", 20, "bold"))
+    title_label = tk.Label(
+        win,
+        text="Crear nuevo vendor",
+        font=("Segoe UI", 22, "bold"),
+        bg=COLOR_BG,
+        fg=COLOR_TEXT
+    )
     title_label.pack(pady=20)
 
     # -------------------------------------------------------
     # INPUT PARA NOMBRE DEL VENDOR CON PLACEHOLDER
     # -------------------------------------------------------
-    entry_name = tk.Entry(win, width=40, font=("Arial", 12), justify="center")
+    entry_name = tk.Entry(
+        win,
+        width=40,
+        font=("Segoe UI", 12),
+        justify="center",
+        bg="#F7F9FC",
+        fg="grey",
+        relief="solid",
+        bd=1
+    )
     entry_name.pack(pady=5,ipady=5)
 
     # Función para placeholder
@@ -70,6 +91,7 @@ def create_vendor_window(root):
         win,
         text="Recuerda: El nombre del vendor debe ser exactamente\n igual al nombre que tienen las ordenes",
         fg="red",
+        bg=COLOR_BG,
         font=("Arial", 10)
     )
     reminder_label.pack(pady=10)
@@ -102,29 +124,45 @@ def create_vendor_window(root):
     crear_btn = tk.Button(
         win,
         text="CREAR",
-        font=("Arial", 12, "bold"),
+        font=("Segoe UI", 12, "bold"),
         width=20,
         height=2,
+        bg=COLOR_PRIMARY,
+        fg="white",
+        activebackground=COLOR_ACCENT,
+        activeforeground="white",
+        cursor="hand2",
+        bd=0,
         command=crear_vendor
     )
     crear_btn.pack(pady=20)
 
     # Contenedor con padding para simular borde redondeado
-    console_frame = tk.Frame(win, bg="#d1d1d1", bd=2, relief="solid")
+    console_frame = tk.Frame(
+        win,
+        bg=COLOR_BG,
+        highlightbackground=COLOR_PRIMARY,
+        highlightthickness=2,
+        bd=0
+    )
+
+    
     console_frame.pack(pady=5, padx=20)
 
     console_text = tk.Text(
         console_frame,
-        height=15,       # Más líneas visibles
-        width=60,        # Un poco menos ancho
+        height=15,
+        width=60,
         state="disabled",
-        bg="#f0f0f0",
-        fg="black",
+        bg="#F0F4F8",
+        fg=COLOR_TEXT,
         font=("Consolas", 11),
-        relief="flat",   # Quitar borde interno
+        relief="solid",
+        bd=1,
         padx=5,
         pady=5
     )
+
     console_text.pack()
 
     sys.stdout = ConsoleRedirect(console_text)
