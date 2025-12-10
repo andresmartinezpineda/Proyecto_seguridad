@@ -16,9 +16,23 @@ def open_update_months(root):
     win.geometry("600x500")
     win.configure(bg=COLOR_BG)
 
+    
+
     # Función para validar que solo se escriban números
     def validar_numero(texto):
         return texto.isdigit() or texto == ""
+    
+    def validar_year(texto, accion):
+        # accion == 1 → intento de insertar
+        if accion == "1" and len(year_entry.get()) >= 4:
+            return False
+        return texto.isdigit() or texto == ""
+
+    def validar_month(texto, accion):
+        if accion == "1" and len(month_entry.get()) >= 2:
+            return False
+        return texto.isdigit() or texto == ""
+
 
     validar_cmd = win.register(validar_numero)
 
@@ -75,7 +89,7 @@ def open_update_months(root):
     year_entry = tk.Entry(
         win,
         validate="key",
-        validatecommand=(validar_cmd, "%P"),
+        validatecommand=(win.register(validar_year), "%S", "%d"),
         font=("Segoe UI", 14),
         width=20,
         bg="#F7F9FC",
@@ -101,7 +115,7 @@ def open_update_months(root):
     month_entry = tk.Entry(
         win,
         validate="key",
-        validatecommand=(validar_cmd, "%P"),
+        validatecommand=(win.register(validar_month), "%S", "%d"),
         font=("Segoe UI", 14),
         width=20,
         bg="#F7F9FC",

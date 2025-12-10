@@ -91,6 +91,17 @@ def open_upload_orders(root):
         win.destroy()
         root.deiconify()
 
+    def validar_year(texto, accion):
+    # accion = 1 cuando se inserta texto
+        if accion == "1" and len(entry_year.get()) >= 4:
+            return False
+        return texto.isdigit()
+
+    def validar_month(texto, accion):
+        if accion == "1" and len(entry_month.get()) >= 2:
+            return False
+        return texto.isdigit()
+
 
     # -------------------------
     # BOTÓN VOLVER (sin acción aún)
@@ -127,7 +138,9 @@ def open_upload_orders(root):
         relief="flat",
         font=("Segoe UI", 11),
         justify="center",
-        validate="key", validatecommand=vcmd
+        validate="key",
+        validatecommand=(win.register(validar_year), "%S", "%d")
+
     )
     entry_year.grid(row=0, column=1, padx=5)
 
@@ -141,7 +154,8 @@ def open_upload_orders(root):
         font=("Segoe UI", 11),
         justify="center",
         validate="key",
-        validatecommand=vcmd
+        validatecommand=(win.register(validar_month), "%S", "%d")
+
     )
     entry_month.grid(row=0, column=3, padx=5)
 
