@@ -1,111 +1,151 @@
-import tkinter as tk
-from tkinter import messagebox
-import os
+import tkinter as tk                    # crear interfaces gráficas
+from tkinter import messagebox          # mostrar ventanas de diálogo (error, info, etc.)
+import os                               # operaciones de sistema de archivos
 
-# IMPORTAMOS LA CLASE
+# Importar la clase ManagerVendors para ejecutar procesos de copia
 from classes import ManagerVendors
 
+# ---------------------------------------------------------
+# Función para validar entrada de solo números
+# ---------------------------------------------------------
 def only_numbers(char):
-    return char.isdigit()
-
-VENDOR_PATH = r"G:\Unidades compartidas\Vendor_files"
-
-# Lista para guardar vendors seleccionados
-selected_vendors = []
-
-# Diccionario para guardar referencia a los botones
-vendor_buttons = {}
-
-# CREAMOS LA INSTANCIA
-manager = ManagerVendors()
+    """
+    Valida que el carácter ingresado sea un número.
+    """
+    return char.isdigit()               # Devuelve True si char es dígito
 
 
+# ---------------------------------------------------------
+# Constantes y variables globales
+# ---------------------------------------------------------
+VENDOR_PATH = r"G:\Unidades compartidas\Vendor_files"  # Ruta base donde están los vendors
+
+selected_vendors = []                   # Lista para guardar vendors seleccionados
+
+vendor_buttons = {}                     # Diccionario para guardar referencia a los botones
+
+manager = ManagerVendors()              # Instancia de ManagerVendors para ejecutar métodos
+
+
+# ---------------------------------------------------------
+# Función para alternar selección de vendor
+# ---------------------------------------------------------
 def open_vendor(name):
     """
     Alterna la selección del vendor: seleccionar / deseleccionar.
     """
-    btn = vendor_buttons.get(name)
+    btn = vendor_buttons.get(name)      # Obtener referencia al botón del vendor
 
-    if name in selected_vendors:
-        # Deseleccionar
-        selected_vendors.remove(name)
+    if name in selected_vendors:        # Si el vendor ya está seleccionado
+        selected_vendors.remove(name)   # Removarlo de la lista
         if btn:
-            btn.config(bg="#d1d1d1")   # color original
-    else:
-        # Seleccionar
-        selected_vendors.append(name)
+            btn.config(bg="#d1d1d1")   # Restaurar color original (gris)
+    else:                               # Si no está seleccionado
+        selected_vendors.append(name)   # Agregarlo a la lista
         if btn:
-            btn.config(bg="#87CEFA")   # azul claro
+            btn.config(bg="#87CEFA")   # Cambiar color a azul claro
 
 
+# ---------------------------------------------------------
+# Función para cargar botones de vendors
+# ---------------------------------------------------------
 def load_vendor_buttons(frame):
-    for widget in frame.winfo_children():
-        widget.destroy()
+    """
+    Carga dinámicamente los botones de vendors desde el sistema de archivos.
+    """
+    for widget in frame.winfo_children():   # Iterar sobre widgets existentes
+        widget.destroy()                    # Eliminar cada widget
 
-    vendor_buttons.clear()
+    vendor_buttons.clear()                  # Limpiar diccionario de botones
 
-    if not os.path.exists(VENDOR_PATH):
-        os.makedirs(VENDOR_PATH)
+    if not os.path.exists(VENDOR_PATH):     # Si no existe la carpeta de vendors
+        os.makedirs(VENDOR_PATH)            # Crearla
 
-    folders = [
+    folders = [                             # Listar solo carpetas (vendors)
         f for f in os.listdir(VENDOR_PATH)
         if os.path.isdir(os.path.join(VENDOR_PATH, f))
     ]
 
-    col = 0
-    row = 0
+    col = 0                                 # Columna actual en la grilla
+    row = 0                                 # Fila actual en la grilla
 
-    for folder in folders:
+    for folder in folders:                  # Iterar sobre cada vendor encontrado
         btn = tk.Button(
             frame,
-            text=folder,
+            text=folder,                    # Nombre del vendor
             width=25,
             height=2,
-            bg="#d1d1d1",
-            command=lambda f=folder: open_vendor(f)
+            bg="#d1d1d1",                   # Color gris por defecto
+            command=lambda f=folder: open_vendor(f)  # Asociar función de selección
         )
-        btn.grid(row=row, column=col, padx=10, pady=10)
+        btn.grid(row=row, column=col, padx=10, pady=10)  # Posicionar en grilla
 
-        vendor_buttons[folder] = btn
+        vendor_buttons[folder] = btn        # Guardar referencia al botón
 
-        col += 1
-        if col > 1:
-            col = 0
-            row += 1
+        col += 1                            # Avanzar columna
+        if col > 1:                         # Si se alcanzó 2 columnas
+            col = 0                         # Reiniciar a columna 0
+            row += 1                        # Avanzar a siguiente fila
 
 
-
+# ---------------------------------------------------------
+# Función principal para abrir ventana de subir órdenes
+# ---------------------------------------------------------
 def open_upload_orders(root):
-    win = tk.Toplevel(root)
-    COLOR_PRIMARY = "#0072CE"        # Azul oficial
-    COLOR_PRIMARY_LIGHT = "#4DA3FF"  # Azul claro
-    COLOR_BG = "#FFFFFF"             # Blanco
-    COLOR_GRAY = "#F2F2F2"           # Gris suave
-    COLOR_TEXT = "#000000"           # Negro
+    """
+    Abre la ventana para subir órdenes de insertion orders.
+    Permite seleccionar vendors, año, mes y tipo de orden.
+    """
+    win = tk.Toplevel(root)                 # Crear ventana secundaria
 
-    win.configure(bg=COLOR_BG)
-    win.title("Subir Órdenes")
-    win.geometry("600x650")
+    # Definir paleta de colores
+    COLOR_PRIMARY = "#0072CE"               # Azul oficial
+    COLOR_PRIMARY_LIGHT = "#4DA3FF"         # Azul claro
+    COLOR_BG = "#FFFFFF"                    # Blanco
+    COLOR_GRAY = "#F2F2F2"                  # Gris suave
+    COLOR_TEXT = "#000000"                  # Negro
 
+    win.configure(bg=COLOR_BG)              # Aplicar color de fondo
+    win.title("Subir Órdenes")              # Título de ventana
+    win.geometry("600x650")                 # Tamaño de ventana
+
+    # ---------------------------------------------------------
+    # Función: volver a ventana anterior
+    # ---------------------------------------------------------
     def volver():
-        win.destroy()
-        root.deiconify()
+        """
+        Cierra la ventana actual y muestra la ventana principal.
+        """
+        win.destroy()                       # Destruir ventana secundaria
+        root.deiconify()                    # Mostrar ventana principal
 
+    # ---------------------------------------------------------
+    # Función: validar año (máximo 4 dígitos)
+    # ---------------------------------------------------------
     def validar_year(texto, accion):
-    # accion = 1 cuando se inserta texto
-        if accion == "1" and len(entry_year.get()) >= 4:
-            return False
-        return texto.isdigit()
+        """
+        Valida que el año no exceda 4 dígitos.
+        accion = "1" cuando se inserta texto, "0" cuando se borra
+        """
+        if accion == "1" and len(entry_year.get()) >= 4:  # Si se inserta y ya hay 4 dígitos
+            return False                    # Rechazar entrada
+        return texto.isdigit()              # Aceptar solo dígitos
 
+    # ---------------------------------------------------------
+    # Función: validar mes (máximo 2 dígitos)
+    # ---------------------------------------------------------
     def validar_month(texto, accion):
-        if accion == "1" and len(entry_month.get()) >= 2:
-            return False
-        return texto.isdigit()
+        """
+        Valida que el mes no exceda 2 dígitos.
+        accion = "1" cuando se inserta texto, "0" cuando se borra
+        """
+        if accion == "1" and len(entry_month.get()) >= 2:  # Si se inserta y ya hay 2 dígitos
+            return False                    # Rechazar entrada
+        return texto.isdigit()              # Aceptar solo dígitos
 
-
-    # -------------------------
-    # BOTÓN VOLVER (sin acción aún)
-    # -------------------------
+    # ---------------------------------------------------------
+    # Botón volver
+    # ---------------------------------------------------------
     back_btn = tk.Button(
         win,
         text="⬅ Volver",
@@ -118,16 +158,15 @@ def open_upload_orders(root):
         cursor="hand2",
         command=volver
     )
-
     back_btn.pack(anchor="nw", padx=10, pady=10)
 
-    # -------------------------------------------------------
-    # SECCIÓN SUPERIOR
-    # -------------------------------------------------------
-    top_frame = tk.Frame(win, bg=COLOR_BG)
+    # ---------------------------------------------------------
+    # Sección superior: Año, Mes, Tipo
+    # ---------------------------------------------------------
+    top_frame = tk.Frame(win, bg=COLOR_BG)  # Frame contenedor
     top_frame.pack(pady=10)
 
-    # Año
+    # Campo Año
     tk.Label(top_frame, text="Año:", bg=COLOR_BG, fg=COLOR_TEXT, font=("Segoe UI", 11)).grid(row=0, column=0, padx=5)
     vcmd = (win.register(only_numbers), "%S")
 
@@ -140,11 +179,10 @@ def open_upload_orders(root):
         justify="center",
         validate="key",
         validatecommand=(win.register(validar_year), "%S", "%d")
-
     )
     entry_year.grid(row=0, column=1, padx=5)
 
-    # Mes
+    # Campo Mes
     tk.Label(top_frame, text="Mes:", bg=COLOR_BG, fg=COLOR_TEXT, font=("Segoe UI", 11)).grid(row=0, column=2, padx=5)
     entry_month = tk.Entry(
         top_frame,
@@ -155,17 +193,15 @@ def open_upload_orders(root):
         justify="center",
         validate="key",
         validatecommand=(win.register(validar_month), "%S", "%d")
-
     )
     entry_month.grid(row=0, column=3, padx=5)
 
-    # Tipo OE / OE JR
-    tk.Label(top_frame,bg=COLOR_BG, text="Tipo:").grid(row=0, column=4, padx=5)
+    # Dropdown Tipo (OE / OE JR)
+    tk.Label(top_frame, bg=COLOR_BG, text="Tipo:").grid(row=0, column=4, padx=5)
+    selected_type = tk.StringVar()          # Variable para guardar opción seleccionada
+    selected_type.set("")                   # Iniciar vacío
 
-    selected_type = tk.StringVar()
-    selected_type.set("")   # dejar vacío al inicio
-
-    dropdown = tk.OptionMenu(top_frame, selected_type, "OE", "OE JR")
+    dropdown = tk.OptionMenu(top_frame, selected_type, "OE", "OE JR")  # Crear dropdown con opciones
     dropdown.config(
         bg=COLOR_GRAY,
         fg=COLOR_TEXT,
@@ -176,27 +212,33 @@ def open_upload_orders(root):
     )
     dropdown.grid(row=0, column=5, padx=5)
 
-    # -------------------------------------------------------
-    # CARGAR VENDORS (SIN CAMBIOS)
-    # -------------------------------------------------------
-    button_frame = tk.Frame(win,bg=COLOR_BG)
+    # ---------------------------------------------------------
+    # Sección de carga de botones de vendors
+    # ---------------------------------------------------------
+    button_frame = tk.Frame(win, bg=COLOR_BG)  # Frame contenedor
     button_frame.pack(pady=20)
 
-    load_vendor_buttons(button_frame)
+    load_vendor_buttons(button_frame)        # Cargar botones dinámicamente
 
-    # ------------------ Checkbox "Seleccionar todos" ------------------
-    select_all_var = tk.BooleanVar()
+    # ---------------------------------------------------------
+    # Checkbox "Seleccionar todos"
+    # ---------------------------------------------------------
+    select_all_var = tk.BooleanVar()        # Variable para estado del checkbox
+
     def select_all_vendors():
-        if select_all_var.get():  # Si está marcado
-            for name in vendor_buttons:
-                if name not in selected_vendors:
-                    selected_vendors.append(name)
-                    vendor_buttons[name].config(bg="#87CEFA")
-        else:  # Si se desmarca
-            for name in vendor_buttons:
-                if name in selected_vendors:
-                    selected_vendors.remove(name)
-                    vendor_buttons[name].config(bg="#d1d1d1")
+        """
+        Selecciona o deselecciona todos los vendors según el estado del checkbox.
+        """
+        if select_all_var.get():            # Si checkbox está marcado
+            for name in vendor_buttons:     # Iterar sobre todos los vendors
+                if name not in selected_vendors:  # Si no está ya seleccionado
+                    selected_vendors.append(name)  # Agregarlo
+                    vendor_buttons[name].config(bg="#87CEFA")  # Cambiar color a azul
+        else:                               # Si checkbox está desmarcado
+            for name in vendor_buttons:     # Iterar sobre todos los vendors
+                if name in selected_vendors:  # Si está seleccionado
+                    selected_vendors.remove(name)  # Removarlo
+                    vendor_buttons[name].config(bg="#d1d1d1")  # Restaurar color gris
 
     tk.Checkbutton(
         win,
@@ -207,47 +249,49 @@ def open_upload_orders(root):
         text="select all",
         variable=select_all_var,
         command=select_all_vendors,
-        anchor="e",          # mantiene la alineación a la derecha
+        anchor="e",                         # Alineación a la derecha
         padx=20,
-        justify="left"      # texto a la derecha del contenido
+        justify="left"                      # Texto a la derecha del contenido
     ).pack(anchor="e", padx=20)
 
-    # -------------------------------------------------------
-    # NUEVA FUNCIÓN PARA EJECUTAR EL MÉTODO
-    # -------------------------------------------------------
+    # ---------------------------------------------------------
+    # Función para ejecutar proceso de subir órdenes
+    # ---------------------------------------------------------
     def upload_orders():
-        # Validaciones
-        if not entry_year.get():
+        """
+        Valida los datos ingresados y ejecuta el proceso de copia de órdenes.
+        """
+        if not entry_year.get():            # Validar que año no esté vacío
             messagebox.showerror("Error", "Falta el dato: Año")
             return
 
-        if not entry_month.get():
+        if not entry_month.get():           # Validar que mes no esté vacío
             messagebox.showerror("Error", "Falta el dato: Mes")
             return
 
-        if not selected_type.get():
+        if not selected_type.get():         # Validar que tipo esté seleccionado
             messagebox.showerror("Error", "Falta el dato: Tipo (OE / OE JR)")
             return
 
-        if not selected_vendors:
+        if not selected_vendors:            # Validar que al menos un vendor esté seleccionado
             messagebox.showerror("Error", "Debe seleccionar al menos un vendor.")
             return
 
-        # Convertir a entero después de validar
-        year = int(entry_year.get())
-        month = int(entry_month.get())
-        tipo = selected_type.get()
-        vendors = selected_vendors
+        # Convertir datos a los tipos correctos
+        year = int(entry_year.get())        # Convertir año a entero
+        month = int(entry_month.get())      # Convertir mes a entero
+        tipo = selected_type.get()          # Obtener tipo seleccionado
+        vendors = selected_vendors          # Obtener lista de vendors seleccionados
 
-        # Ejecutar método
+        # Ejecutar el método del manager
         manager.copy_latest_orders_batch(vendors, tipo, year, month)
 
-        # Mensaje de éxito
+        # Mostrar mensaje de éxito
         messagebox.showinfo("Éxito", "Las órdenes se subieron correctamente.")
 
-    # -------------------------------------------------------
-    # NUEVO BOTÓN: "SUBIR ÓRDENES"
-    # -------------------------------------------------------
+    # ---------------------------------------------------------
+    # Botón principal: Subir órdenes
+    # ---------------------------------------------------------
     tk.Button(
         win,
         text="Subir órdenes",
