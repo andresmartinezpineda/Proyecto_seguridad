@@ -1,54 +1,76 @@
-import tkinter as tk
-from classes import ManagerVendors
-import sys
-from classes import ConsoleRedirect
+import tkinter as tk                    # Crear interfaces gráficas con Tkinter
+from classes import ManagerVendors      # Clase para gestionar múltiples vendors
+import sys                              # Redirigir stdout/stderr hacia widget de consola
+from classes import ConsoleRedirect     # Redirector para mostrar salida en widget Text
 
-# --- PALETA TIPO OPEN ENGLISH ---
-COLOR_BG = "#FFFFFF"
-COLOR_PRIMARY = "#007BFF"
-COLOR_ACCENT = "#00A3E0"
-COLOR_TEXT = "#003B5C"
+# ---------------------------------------------------------
+# Paleta de colores usada en la interfaz
+# ---------------------------------------------------------
+COLOR_BG = "#FFFFFF"                    # Color de fondo de la ventana
+COLOR_PRIMARY = "#007BFF"               # Color principal (botón Crear)
+COLOR_ACCENT = "#00A3E0"                # Color activo para botones
+COLOR_TEXT = "#003B5C"                  # Color del texto principal
+
 
 def open_update_months(root):
-    win = tk.Toplevel(root)
-    manager = ManagerVendors()
-    win.title("Crear estructura de nuevo año y mes")
-    win.geometry("600x500")
-    win.configure(bg=COLOR_BG)
+    """
+    Abre ventana secundaria para crear estructura de nuevo año y mes en todos los vendors.
+    - root: ventana principal para retornar cuando se cierre esta ventana.
+    """
+    win = tk.Toplevel(root)               # Crear ventana hija sobre root
+    manager = ManagerVendors()            # Instancia de ManagerVendors para ejecutar métodos
+    win.title("Crear estructura de nuevo año y mes")  # Título de la ventana
+    win.geometry("600x500")               # Dimensiones fijas
+    win.configure(bg=COLOR_BG)            # Aplicar color de fondo
 
-    
-
-    # Función para validar que solo se escriban números
-    def validar_numero(texto):
-        return texto.isdigit() or texto == ""
-    
-    def validar_year(texto, accion):
-        # accion == 1 → intento de insertar
-        if accion == "1" and len(year_entry.get()) >= 4:
-            return False
-        return texto.isdigit() or texto == ""
-
-    def validar_month(texto, accion):
-        if accion == "1" and len(month_entry.get()) >= 2:
-            return False
-        return texto.isdigit() or texto == ""
-
-
-    validar_cmd = win.register(validar_numero)
-
+    # -------------------------------------------------------
+    # Función: volver a ventana principal
+    # -------------------------------------------------------
     def volver():
-        win.destroy()
-        root.deiconify()
+        """
+        Cierra la ventana actual y reaparece la ventana principal.
+        """
+        win.destroy()                      # Cerrar ventana hija
+        root.deiconify()                   # Mostrar ventana principal nuevamente
 
+    # -------------------------------------------------------
+    # Función: validar año (máximo 4 dígitos)
+    # -------------------------------------------------------
+    def validar_year(texto, accion):
+        """
+        Valida que el año no exceda 4 dígitos.
+        accion = "1" cuando se inserta texto, "0" cuando se borra
+        """
+        if accion == "1" and len(year_entry.get()) >= 4:  # Si se inserta y ya hay 4 dígitos
+            return False                    # Rechazar entrada
+        return texto.isdigit() or texto == ""  # Aceptar solo dígitos o vacío
+
+    # -------------------------------------------------------
+    # Función: validar mes (máximo 2 dígitos)
+    # -------------------------------------------------------
+    def validar_month(texto, accion):
+        """
+        Valida que el mes no exceda 2 dígitos.
+        accion = "1" cuando se inserta texto, "0" cuando se borra
+        """
+        if accion == "1" and len(month_entry.get()) >= 2:  # Si se inserta y ya hay 2 dígitos
+            return False                    # Rechazar entrada
+        return texto.isdigit() or texto == ""  # Aceptar solo dígitos o vacío
+
+    # -------------------------------------------------------
+    # Función: ejecutar creación de estructura en todos los vendors
+    # -------------------------------------------------------
     def ejecutar_creacion():
-        year = int(year_entry.get())
-        month = int(month_entry.get())
-        manager.update_all_vendors_month(year, month)
+        """
+        Obtiene año y mes ingresados y crea la estructura para todos los vendors.
+        """
+        year = int(year_entry.get())        # Convertir año a entero
+        month = int(month_entry.get())      # Convertir mes a entero
+        manager.update_all_vendors_month(year, month)  # Ejecutar creación en todos los vendors
 
-
-    # -------------------------
-    # BOTÓN VOLVER (sin acción aún)
-    # -------------------------
+    # -------------------------------------------------------
+    # BOTÓN VOLVER (fila superior izquierda)
+    # -------------------------------------------------------
     back_btn = tk.Button(
         win,
         text="⬅ Volver",
@@ -57,14 +79,13 @@ def open_update_months(root):
         borderwidth=0,
         font=("Segoe UI", 12, "bold"),
         cursor="hand2",
-        command=volver
+        command=volver                      # Asociar la acción de volver
     )
+    back_btn.pack(anchor="nw", padx=10, pady=10)  # Posicionar en la esquina superior izquierda
 
-    back_btn.pack(anchor="nw", padx=10, pady=10)
-
-    # -------------------------
-    # TÍTULO
-    # -------------------------
+    # -------------------------------------------------------
+    # TÍTULO PRINCIPAL (encabezado)
+    # -------------------------------------------------------
     title_label = tk.Label(
         win,
         text="Crear estructura de nuevo año y mes",
@@ -72,24 +93,24 @@ def open_update_months(root):
         bg=COLOR_BG,
         fg=COLOR_TEXT
     )
-    title_label.pack(pady=20)
+    title_label.pack(pady=20)              # Separación vertical bajo el título
 
-    # -------------------------
-    # INPUT PARA AÑO
-    # -------------------------
+    # -------------------------------------------------------
+    # LABEL Y INPUT PARA AÑO
+    # -------------------------------------------------------
     year_label = tk.Label(
-        win, text="Año por crear",
+        win,
+        text="Año por crear",
         bg=COLOR_BG,
         fg=COLOR_TEXT,
         font=("Segoe UI", 12)
     )
-
-    year_label.pack()
+    year_label.pack()                      # Mostrar etiqueta
 
     year_entry = tk.Entry(
         win,
         validate="key",
-        validatecommand=(win.register(validar_year), "%S", "%d"),
+        validatecommand=(win.register(validar_year), "%S", "%d"),  # Asociar validación de año
         font=("Segoe UI", 14),
         width=20,
         bg="#F7F9FC",
@@ -98,24 +119,24 @@ def open_update_months(root):
         bd=1,
         justify="center"
     )
-    year_entry.pack(pady=5)
+    year_entry.pack(pady=5)                # Espaciado alrededor del entry
 
-    # -------------------------
-    # INPUT PARA MES
-    # -------------------------
+    # -------------------------------------------------------
+    # LABEL Y INPUT PARA MES
+    # -------------------------------------------------------
     month_label = tk.Label(
-        win, text="Mes por crear",
+        win,
+        text="Mes por crear",
         bg=COLOR_BG,
         fg=COLOR_TEXT,
         font=("Segoe UI", 12)
     )
-
-    month_label.pack()
+    month_label.pack()                     # Mostrar etiqueta
 
     month_entry = tk.Entry(
         win,
         validate="key",
-        validatecommand=(win.register(validar_month), "%S", "%d"),
+        validatecommand=(win.register(validar_month), "%S", "%d"),  # Asociar validación de mes
         font=("Segoe UI", 14),
         width=20,
         bg="#F7F9FC",
@@ -124,11 +145,11 @@ def open_update_months(root):
         bd=1,
         justify="center"
     )
-    month_entry.pack(pady=5)
+    month_entry.pack(pady=5)               # Espaciado alrededor del entry
 
-    # -------------------------
-    # BOTÓN CREAR (sin funcionalidad aún)
-    # -------------------------
+    # -------------------------------------------------------
+    # BOTÓN CREAR: valida inputs y crea estructura en todos los vendors
+    # -------------------------------------------------------
     create_btn = tk.Button(
         win,
         text="Crear",
@@ -143,26 +164,37 @@ def open_update_months(root):
         height=2,
         relief="solid",
         borderwidth=2,
-        command=ejecutar_creacion
+        command=ejecutar_creacion          # Asociar la acción de creación
     )
-    create_btn.pack(pady=30)
+    create_btn.pack(pady=30)               # Separación vertical antes del botón
 
-    console_frame = tk.Frame(win, bg=COLOR_ACCENT, bd=2, relief="flat")
-    console_frame.pack(pady=5, padx=20)
+    # -------------------------------------------------------
+    # CONTENEDOR Y WIDGET DE CONSOLA (salida stdout/stderr)
+    # -------------------------------------------------------
+    console_frame = tk.Frame(
+        win,
+        bg=COLOR_ACCENT,
+        bd=2,
+        relief="flat"
+    )
+    console_frame.pack(pady=5, padx=20)    # Margen alrededor del contenedor de consola
 
     console_text = tk.Text(
         console_frame,
-        height=15,       # Más líneas visibles
-        width=60,        # Un poco menos ancho
-        state="disabled",
+        height=15,                         # Más líneas visibles
+        width=60,                          # Ancho del widget de consola
+        state="disabled",                  # Inicio en solo lectura
         bg="#F0F4F8",
         fg=COLOR_TEXT,
         relief="flat",
         font=("Consolas", 11),
-        padx=5,
-        pady=5
+        padx=5,                            # Padding interno horizontal
+        pady=5                             # Padding interno vertical
     )
-    console_text.pack()
+    console_text.pack()                    # Empaquetar el Text dentro del frame
 
-    sys.stdout = ConsoleRedirect(console_text)
-    sys.stderr = ConsoleRedirect(console_text)
+    # -------------------------------------------------------
+    # Redirigir stdout y stderr al widget de consola
+    # -------------------------------------------------------
+    sys.stdout = ConsoleRedirect(console_text)   # Mostrar prints en la interfaz
+    sys.stderr = ConsoleRedirect(console_text)   # Mostrar errores también en la interfaz
