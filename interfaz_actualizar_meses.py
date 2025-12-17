@@ -20,7 +20,7 @@ def open_update_months(root):
     win = tk.Toplevel(root)               # Crear ventana hija sobre root
     manager = ManagerVendors()            # Instancia de ManagerVendors para ejecutar métodos
     win.title("Crear estructura de nuevo año y mes")  # Título de la ventana
-    win.geometry("600x500")               # Dimensiones fijas
+    win.geometry("600x600")               # Dimensiones fijas
     win.configure(bg=COLOR_BG)            # Aplicar color de fondo
 
     # -------------------------------------------------------
@@ -181,7 +181,7 @@ def open_update_months(root):
 
     console_text = tk.Text(
         console_frame,
-        height=15,                         # Más líneas visibles
+        height=9,                         # Más líneas visibles
         width=60,                          # Ancho del widget de consola
         state="disabled",                  # Inicio en solo lectura
         bg="#F0F4F8",

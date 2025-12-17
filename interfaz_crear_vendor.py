@@ -24,7 +24,7 @@ def create_vendor_window(root):
     # -------------------------------------------------------
     win = tk.Toplevel(root)               # Crear ventana hija sobre root
     win.title("Crear nuevo vendor")        # Título de la ventana
-    win.geometry("600x500")               # Dimensiones fijas
+    win.geometry("600x550")               # Dimensiones fijas
     win.resizable(False, False)           # No permitir redimensionar
     win.configure(bg=COLOR_BG)            # Aplicar color de fondo
 
@@ -180,7 +180,7 @@ def create_vendor_window(root):
 
     console_text = tk.Text(
         console_frame,
-        height=15,
+        height=9,
         width=60,
         state="disabled",                   # Inicio en solo lectura
         bg="#F0F4F8",

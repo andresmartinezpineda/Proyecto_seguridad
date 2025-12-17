@@ -8,7 +8,7 @@ from datetime import datetime  # obtener fecha y hora actuales
 
 
 # ---------------------------------------------------------
-# Clase Vendor: representa un vendor y su estructura en disco
+# Clase Vendor: representa un vendor y su estructura en el drive
 # ---------------------------------------------------------
 class Vendor:
     BASE_PATH = r"G:\Unidades compartidas\Vendor_files"  # Ruta base donde se guardan los vendors destino
@@ -33,7 +33,7 @@ class Vendor:
         Crea la carpeta principal del vendor si no existe y devuelve True si se creó.
         """
         if not os.path.exists(self.vendor_path):             # Si la carpeta del vendor no existe
-            os.makedirs(self.vendor_path)                    # Crear la carpeta (incluye padres si aplica)
+            os.makedirs(self.vendor_path)                    # Crear la carpeta del vendor
             msg = f"Vendor '{self.name}' creado con éxito."  # Mensaje de éxito
             print(msg)                                       # Mostrar por consola
             return True                                      # Indicar que se creó
@@ -102,25 +102,25 @@ class Vendor:
     def update_structure(self):
         """
         Verifica y crea la estructura completa del vendor:
-        - Crea el vendor si hace falta
+        - Crea el vendor
         - Crea el año actual y la estructura del mes actual
         Envía mensajes por consola y utiliza notifier si está configurado.
         """
-        vendor_created = self.create_vendor()                                # Crear carpeta principal si hace falta
+        vendor_created = self.create_vendor()                                # Crear carpeta principal del vendor
         self.create_month_structure()                                        # Crear año/mes/ordenes/cierres
 
         month_folder = f"{self.current_month:02d}.{calendar.month_name[self.current_month]}"  # Nombre del mes en formato MM.MonthName
 
-        if vendor_created:                                                    # Si se creó el vendor en esta ejecución
+        if vendor_created:                                                    # Si el vendor no existe
             msg = f"""🗂️ Vendor '{self.name}' creado con éxito:
         -    Estructura inicial creada para el año: {self.current_year}
         -    Mes: {month_folder}"""
             print(msg)                                                       # Mostrar mensaje resumen por consola
-            if self.notifier:                                                 # Enviar por Slack si está configurado
+            if self.notifier:                                                 # Enviar por Slack el mismo mensaje
                 self.notifier.send(msg)
         else:                                                                  # Si el vendor ya existía
             msg = f"""⚠️ Vendor '{self.name}' ya existía."""
-            if self.notifier:                                                 # Enviar aviso por Slack si está configurado
+            if self.notifier:                                                 # Enviar aviso por Slack
                 self.notifier.send(msg)
 
 
