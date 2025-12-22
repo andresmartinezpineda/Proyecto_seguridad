@@ -314,6 +314,11 @@ class ManagerVendors:
                 and not f.startswith(".")
             ]
 
+            print("     [DEBUG] Archivos detectados:")
+            for f in all_files:
+                print(f"         -> '{f}'")
+
+
             print(f"     ✔ {len(all_files)} archivos encontrados.")                # Mostrar cantidad de archivos encontrados
 
             if not all_files:                                                     # Si no hay archivos, continuar con siguiente vendor
