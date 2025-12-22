@@ -311,6 +311,7 @@ class ManagerVendors:
             all_files = [
                 f for f in os.listdir(insertion_orders_path)
                 if os.path.isfile(os.path.join(insertion_orders_path, f))
+                and not f.startswith(".")
             ]
 
             print(f"     ✔ {len(all_files)} archivos encontrados.")                # Mostrar cantidad de archivos encontrados
