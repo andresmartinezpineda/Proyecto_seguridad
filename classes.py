@@ -312,6 +312,7 @@ class ManagerVendors:
                 f for f in os.listdir(insertion_orders_path)
                 if os.path.isfile(os.path.join(insertion_orders_path, f))
                 and not f.startswith(".")
+                and not f.startswith("~$")
             ]
 
             print("     [DEBUG] Archivos detectados:")
@@ -356,7 +357,7 @@ class ManagerVendors:
                     if cls.normalize(vendor_in_file) == vendor_name_clean:          # Comparar vendor extraído con vendor solicitado
                         print("       ✔ Coincidencia encontrada con el vendor solicitado.")
                         file_to_copy = file                                           # Seleccionar este archivo para copiar
-                        break                                                       # Romper búsqueda de archivos
+                        break                                                         # Romper búsqueda de archivos
                     else:
                         print("       ✖ Vendor no coincide.")                        # Indicar diferencia y continuar
 
@@ -442,7 +443,7 @@ class ManagerVendors:
 
             print(f"✅ Archivo copiado exitosamente a:\n{final_dest_path}")               # Confirmación de copia
             print("================ FIN DEL PROCESO ====================\n")              # Mensaje final de proceso
-            return f"✅ El vendor '{vendor_name}' se ha actualizado correctamente de version para el año '{year}' y el mes '{month}' .\n"
+            return f"✅ El vendor '{vendor_name}' se ha actualizado correctamente de version\n -    Producto: {product}\n -    Año: {year}\n -    Mes {month}.\n"
 
         # Si se recorrió todo origen y no se encontró archivo coincidente para el vendor solicitado
         print("❌ No se encontró ningún archivo coincidente con el vendor solicitado.\n")
