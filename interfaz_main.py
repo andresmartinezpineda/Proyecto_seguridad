@@ -1,3 +1,5 @@
+import os
+import subprocess
 import tkinter as tk                    # Crear interfaces gráficas con Tkinter
 from interfaz_subir_ordenes import open_upload_orders  # Función para abrir ventana de subir órdenes
 from interfaz_crear_vendor import create_vendor_window  # Función para abrir ventana de crear vendor
@@ -41,6 +43,41 @@ def open_main_panel():
         e = evento de mouse
         """
         e.widget['bg'] = "#0072CE"           # Restaurar a azul Open English
+
+    # -------------------------------------------------------
+    # Función: abrir archivo de configuración (settings.xlsx)
+    # -------------------------------------------------------
+    def open_settings_excel():
+        """
+        Abre el archivo config/settings.xlsx del aplicativo.
+        """
+        try:
+            # Obtener la ruta base del aplicativo (directorio del archivo actual)
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
+            # Construir la ruta a la carpeta config
+            config_path = os.path.join(base_path, "config")
+
+            # Construir la ruta completa al archivo settings.xlsx
+            settings_file = os.path.join(config_path, "settings.xlsx")
+
+            # Validar que el archivo existe
+            if not os.path.exists(settings_file):
+                tk.messagebox.showerror(
+                    "Error",                 # Título del cuadro de diálogo
+                    "No se encontró el archivo settings.xlsx en la carpeta config."  # Mensaje de error
+                )
+                return
+
+            # Abrir el archivo con el programa por defecto del sistema (Excel)
+            subprocess.Popen(["start", settings_file], shell=True)
+
+        except Exception as e:
+            tk.messagebox.showerror(
+                "Error",                     # Título del cuadro de diálogo
+                f"No se pudo abrir el archivo de configuración.\n\n{e}"  # Mensaje de error con detalles
+            )
+
 
     # -------------------------------------------------------
     # TÍTULO PRINCIPAL
@@ -110,6 +147,33 @@ def open_main_panel():
     btn_upload.bind("<Enter>", on_enter)    # Bind: efecto al pasar mouse
     btn_upload.bind("<Leave>", on_leave)    # Bind: efecto al salir mouse
 
+    # -------------------------------------------------------
+    # BOTÓN CONFIGURACIÓN (INFERIOR DERECHA)
+    # -------------------------------------------------------
+    btn_settings = tk.Button(
+        root,                                # Ventana raíz como contenedor
+        text="🔀 Rutas",                     # Texto del botón
+        command=open_settings_excel,         # Comando: abrir archivo settings.xlsx
+        bg="#FF8533",                        # Color de fondo (naranja)
+        fg="#333333",                        # Color del texto (gris oscuro)
+        activebackground="#CCCCCC",          # Fondo al hacer clic (gris claro)
+        activeforeground="#000000",          # Texto al hacer clic (negro)
+        borderwidth=0,                       # Sin bordes
+        relief="flat",                       # Estilo plano
+        font=("Segoe UI", 12, "bold"),       # Fuente moderna
+        padx=10,                             # Espaciado horizontal
+        pady=6,                              # Espaciado vertical
+        cursor="hand2"                       # Cursor de mano
+    )
+
+    # Posicionar el botón en la esquina inferior derecha
+    btn_settings.place(
+        relx=1.0,                            # Alineado a la derecha (100%)
+        rely=1.0,                            # Alineado abajo (100%)
+        anchor="se",                         # Ancla en esquina inferior derecha
+        x=-15,                               # Offset horizontal (-15 píxeles)
+        y=-15                                # Offset vertical (-15 píxeles)
+    )
 
     # -------------------------------------------------------
     # INICIAR LOOP PRINCIPAL

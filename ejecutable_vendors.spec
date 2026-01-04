@@ -5,7 +5,9 @@ a = Analysis(
     ['ejecutable_vendors.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        ('config/settings.xlsx', 'config')
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

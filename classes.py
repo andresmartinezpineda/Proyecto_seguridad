@@ -1,4 +1,5 @@
 # Importar módulos estándar y clases auxiliares
+from openpyxl import load_workbook # manipulación de archivos Excel (.xlsx)
 import sys                      # redirigir stdout/stderr cuando sea necesario
 import os                       # operaciones de sistema de archivos (path, exists, listdir, makedirs, etc.)
 import shutil                   # funciones para copiar archivos preservando metadatos (copy2)
@@ -7,11 +8,29 @@ from slack_bot import NOTIFIER  # notificador de Slack preconfigurado (puede ser
 from datetime import datetime  # obtener fecha y hora actuales
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) # Directorio base del proyecto
+CONFIG_PATH = os.path.join(BASE_DIR, "config", "settings.xlsx") # Ruta al archivo de configuración Excel
+
+def _load_config_sheet(): 
+    wb = load_workbook(CONFIG_PATH, data_only=True) # Cargar el libro de Excel con valores calculados
+    return wb["CONFIG"] # Devolver la hoja "CONFIG"
+
+
 # ---------------------------------------------------------
 # Clase Vendor: representa un vendor y su estructura en el drive
 # ---------------------------------------------------------
 class Vendor:
-    BASE_PATH = r"G:\Unidades compartidas\Vendor_files"  # Ruta base donde se guardan los vendors destino
+
+    def get_base_path():
+        ws = _load_config_sheet()
+        value = ws["B3"].value
+
+        if not value:
+            raise ValueError("BASE_PATH no definido en CONFIG!B3")
+
+        return value
+
+    BASE_PATH = get_base_path()  # Ruta base donde se guardan los vendors destino G:\Unidades compartidas\Vendor_files
 
     def __init__(self, name):
         """
@@ -184,7 +203,17 @@ class Vendor:
 # Nueva clase para gestionar varios vendors (origen = Marketing Team)
 # ---------------------------------------------------------
 class ManagerVendors:
-    BASE_PATH = r"G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV"  # Ruta base origen (donde están los insertion orders)
+
+    def get_origin_path():
+        ws = _load_config_sheet()
+        value = ws["B2"].value
+
+        if not value:
+            raise ValueError("ORIGIN_PATH no definido en CONFIG!B2")
+
+        return value
+
+    BASE_PATH = get_origin_path()  # Ruta base origen (donde están los insertion orders) G:\Unidades compartidas\Marketing Team\Offline Marketing\03. Insertion orders\01. TV
     notifier = NOTIFIER   # Notificador de Slack opcional (puede ser None)
 
 
