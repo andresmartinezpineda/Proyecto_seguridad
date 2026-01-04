@@ -249,6 +249,8 @@ class ManagerVendors:
         # Indicar ruta origen desde donde se leerán los vendors/archivos
         print(f"[INFO] Leyendo carpetas en origen BASE_PATH:\n{cls.BASE_PATH}\n")
 
+        file_found = False                                          # Flag para indicar si se encontró el vendor
+
         for vendor_folder in os.listdir(cls.BASE_PATH):                  # Iterar sobre cada carpeta en ruta origen
             vendor_path = os.path.join(cls.BASE_PATH, vendor_folder)     # Construir ruta completa al folder actual
             print(f"[CHECK] Revisando folder: {vendor_folder}")          # Mostrar carpeta que se está revisando
@@ -364,6 +366,9 @@ class ManagerVendors:
             if not file_to_copy:                                                      # Si no se encontró un archivo coincidente
                 print("     ✖ No se encontró un archivo que coincida con vendor y versión.\n")
                 continue
+            else:
+                file_found = True                                               # Indicar que se encontró el vendor
+
 
             print(f"     ✔ Archivo final a copiar: {file_to_copy}\n")                   # Mostrar archivo seleccionado
 
@@ -447,7 +452,8 @@ class ManagerVendors:
 
         # Si se recorrió todo origen y no se encontró archivo coincidente para el vendor solicitado
         print("❌ No se encontró ningún archivo coincidente con el vendor solicitado.\n")
-        return f"❌ No se encontró ningún archivo coincidente con el vendor '{vendor_name}' en la carpeta destino.\n"
+        if file_found is False:
+            return f"❌ No se encontró ningun archivo en el vendor '{vendor_name}' del producto '{product}' en la ruta origen.\n"
 
 
     @classmethod
@@ -473,7 +479,8 @@ class ManagerVendors:
 
 class ConsoleRedirect:
     """
-    Redirige stdout/stderr hacia un widget Text de Tkinter (útil para integrar consola en GUI).
+    Redirige stdout/stderr hacia un wi
+    dget Text de Tkinter (útil para integrar consola en GUI).
     """
     def __init__(self, text_widget):
         self.text_widget = text_widget   # Widget Text donde se escribirán las salidas
@@ -482,7 +489,9 @@ class ConsoleRedirect:
         """
         Inserta texto en el widget Text respetando estado (readonly) y desplazando el scroll.
         """
-        self.text_widget.config(state="normal")  # Permitir escritura temporalmente
+        if not self.text_widget.winfo_exists():
+            return 
+        self.text_widget.config(state="normal")
         self.text_widget.insert("end", string)   # Insertar el texto recibido
         self.text_widget.see("end")              # Asegurar visibilidad del final del contenido
         self.text_widget.config(state="disabled")# Volver a dejar el widget en modo sólo lectura
@@ -501,9 +510,4 @@ class ConsoleRedirect:
         sys.stdout = redirector                     # Redirigir stdout
         sys.stderr = redirector                     # Redirigir stderr
         return redirector
-
-
-
-
-
 
