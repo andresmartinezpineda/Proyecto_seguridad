@@ -98,6 +98,6 @@ Este proyecto está orientado a:
 ---
 
 👨‍💻 Autores
-Andrés Martínez Pineda
-Danna Camila Amado
+- Andrés Martínez Pineda
+- Danna Camila Amado
 Desarrolladores de Software.
