@@ -284,10 +284,11 @@ def open_upload_orders(root):
         vendors = selected_vendors          # Obtener lista de vendors seleccionados
 
         # Ejecutar el método del manager
-        manager.copy_latest_orders_batch(vendors, tipo, year, month)
+        messages = manager.copy_latest_orders_batch(vendors, tipo, year, month)
 
-        # Mostrar mensaje de éxito
-        messagebox.showinfo("Éxito", "Las órdenes se subieron correctamente.")
+        # Mostrar todos los mensajes en un solo messagebox
+        full_message = "\n".join(messages)
+        messagebox.showinfo("Resultado del Proceso", full_message)
 
     # ---------------------------------------------------------
     # Botón principal: Subir órdenes

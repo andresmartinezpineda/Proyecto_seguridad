@@ -430,7 +430,7 @@ class ManagerVendors:
 
             if not os.path.isdir(dest_year_path):                                       # Si no existe carpeta del año en destino, devolver error
                 print("❌ No existe carpeta destino del año.\n")
-                return f"❌ En el vendor '{vendor_name}' destino no existe la carpeta del año {year}.\n"
+                return f"❌ En '{vendor_name}' de la ruta destino no existe la carpeta del año {year}.\n"
 
             print("✔ Carpeta año destino encontrada.")                                   # Confirmación año encontrado
 
@@ -445,7 +445,7 @@ class ManagerVendors:
 
             if not dest_month_folder:                                                    # Si no se encontró carpeta mes destino, devolver error
                 print("❌ No existe carpeta destino del mes.\n")
-                return f"❌ En el vendor '{vendor_name}' no existe el mes {month}"
+                return f"❌ En '{vendor_name}' | año → '{year}' | no existe la carpeta mes → {month}"
 
             print(f"✔ Carpeta mes destino encontrada: {dest_month_folder}")               # Informar carpeta mes destino encontrada
 
@@ -457,7 +457,7 @@ class ManagerVendors:
 
             if not os.path.isdir(orders_path):                                           # Si no existe carpeta 'ordenes', devolver error
                 print("❌ No existe carpeta 'ordenes'.\n")
-                return f"❌ En el vendor | {vendor_name} | año '{year}' | mes {month} | no existe la carpeta ordenes"
+                return f"❌⚠️ En '{vendor_name}' | año → '{year}' | mes → {month} | no existe la carpeta ordenes"
 
             print("✔ Carpeta 'ordenes' encontrada.")                                     # Confirmar existencia
 
@@ -467,7 +467,7 @@ class ManagerVendors:
 
             if not os.path.isdir(final_dest_path):                                       # Si no existe carpeta de producto destino, devolver error
                 print("❌ No existe carpeta final del producto.\n")
-                return f"❌ En el vendor | {vendor_name} | mes {month} | no existe la carpeta '{product}' debes eliminar la carpeta de este mes y crearla de nuevo"
+                return f"❌⚠️ En '{vendor_name}' | año → '{year}' | Mes → {month} | no existe la carpeta '{product}' debes eliminar la carpeta de este mes y crearla de nuevo"
 
             print("✔ Carpeta final destino encontrada.\n")                               # Confirmación final
 
@@ -477,33 +477,37 @@ class ManagerVendors:
 
             print(f"✅ Archivo copiado exitosamente a:\n{final_dest_path}")               # Confirmación de copia
             print("================ FIN DEL PROCESO ====================\n")              # Mensaje final de proceso
-            return f"✅ El vendor '{vendor_name}' se ha actualizado correctamente de version\n -    Producto: {product}\n -    Año: {year}\n -    Mes {month}.\n"
+            return f"✅ {vendor_name} | {product} | Año → {year} | Mes → {month} | actualizado exitosamente."
 
         # Si se recorrió todo origen y no se encontró archivo coincidente para el vendor solicitado
         print("❌ No se encontró ningún archivo coincidente con el vendor solicitado.\n")
         if file_found is False:
-            return f"❌ No se encontró ningun archivo en el vendor '{vendor_name}' del producto '{product}' en la ruta origen.\n"
+            return f"❌ {vendor_name} | {product} | no tiene ningun archivo en la ruta origen.\n"
 
 
     @classmethod
     def copy_latest_orders_batch(cls, vendors: list, product: str, year: int, month: int):
         """
         Ejecuta copy_latest_order para varios vendors (proceso por lotes).
+        Retorna una lista de mensajes con los resultados.
         """
-        print("\n=========== INICIO PROCESO POR LOTES ===========\n")  # Encabezado batch
+        messages = []  # Lista para acumular mensajes
+        print("\n=========== INICIO PROCESO POR LOTES ===========\n")
 
         for vendor in vendors:                                      # Iterar lista de vendors proporcionada
             print(f"\n>>> Ejecutando para vendor: {vendor}")        # Mensaje por vendor
             print("---------------------------------------------")
             try:
                 result = cls.copy_latest_order(vendor, product, year, month)  # Llamada al proceso para cada vendor
-                print(result)                                               # Mostrar resultado de la operación
+                messages.append(result)  # Agregar resultado a la lista
                 if cls.notifier:                                             # Enviar resumen por Slack si está configurado
                     cls.notifier.send(result)
             except Exception as e:
-                print(f"❌ Error inesperado con vendor {vendor}: {e}")        # Capturar e informar errores por vendor
+                error_msg = f"❌ Error inesperado con vendor {vendor}: {e}"
+                messages.append(error_msg)  # Agregar error a la lista
 
-        print("\n=========== FIN PROCESO POR LOTES ===========\n")     # Mensaje final batch
+        print("\n=========== FIN PROCESO POR LOTES ===========")
+        return messages  # Retornar la lista de mensajes
 
 
 class ConsoleRedirect:
