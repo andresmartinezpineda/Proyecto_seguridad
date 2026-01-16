@@ -471,6 +471,15 @@ class ManagerVendors:
 
             print("✔ Carpeta final destino encontrada.\n")                               # Confirmación final
 
+            # Borrar archivos existentes en la carpeta destino antes de copiar
+            print(">>> BORRANDO ARCHIVOS EXISTENTES EN CARPETA DESTINO...")
+            for file in os.listdir(final_dest_path):                                # Iterar sobre archivos en la carpeta destino
+                file_path = os.path.join(final_dest_path, file)                     # Ruta completa al archivo
+                if os.path.isfile(file_path):                                       # Verificar que sea un archivo (no carpeta)
+                    os.remove(file_path)                                            # Borrar el archivo
+                    print(f"   - Archivo borrado: {file}")                          # Informar archivo borrado
+            print("✔ Archivos existentes borrados.\n")                             # Confirmación de borrado
+
             # Copiar archivo desde origen a destino preservando metadatos
             print(">>> COPIANDO ARCHIVO...")
             shutil.copy2(origin_file_path, final_dest_path)                              # Copiar archivo (preserva metadatos)

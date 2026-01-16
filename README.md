@@ -98,5 +98,5 @@ Este proyecto está orientado a:
 ---
 
 👨‍💻 Autores
-- Andrés Martínez Pineda
+- Andrés Martínez Pineda - [text](https://github.com/andresmartinezpineda)
 - Danna Camila Amado
