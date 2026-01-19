@@ -153,10 +153,12 @@ class Vendor:
         - Ajusta temporalmente current_year/current_month para reutilizar métodos existentes
         - Crea carpetas y subcarpetas debidas
         - Restaura valores originales
+        Devuelve una lista de mensajes con los resultados.
         """
+        messages = []
         if not 1 <= month <= 12:                                   # Validar rango del mes
-            print("❌ El mes debe estar entre 1 y 12.")             # Mensaje de error si el mes no está en 1..12
-            return                                                 # Salir sin hacer cambios
+            messages.append("❌ El mes debe estar entre 1 y 12.")  # Mensaje de error si el mes no está en 1..12
+            return messages                                        # Salir sin hacer cambios
 
         previous_year = self.current_year                          # Guardar valor actual de año
         previous_month = self.current_month                        # Guardar valor actual de mes
@@ -172,15 +174,13 @@ class Vendor:
 
         if not os.path.exists(month_path):                          # Si la carpeta del mes no existe
             os.makedirs(month_path)                                 # Crear la carpeta del mes
-            msg = f"""📁✅ Se ha creado carpeta para el vendor: {vendor_name}
-            En el año: '{year}'
-            En el mes: '{month_folder}' exitosamente."""
-            print(msg)                                             # Mensaje de creación exitosa
+            msg = f"""📁✅ {vendor_name} | Año → {year} | Mes → {month_folder} | estructura creada exitosamente."""
+            messages.append(msg)                                   # Mensaje de creación exitosa
             if self.notifier:                                      # Enviar notificación si está configurado
                 self.notifier.send(msg)
         else:
-            msg = f"⚠️ Carpeta del vendor {vendor_name} para el mes {month_folder} ya existe."
-            print(msg)                                             # Mensaje si ya existía
+            msg = f"⚠️ {vendor_name} | Año → {year} | Mes → {month_folder} | estructura ya existente."
+            messages.append(msg)                                   # Mensaje si ya existía
             if self.notifier:
                 self.notifier.send(msg)
 
@@ -197,6 +197,8 @@ class Vendor:
         # Restaurar valores originales
         self.current_year = previous_year
         self.current_month = previous_month
+
+        return messages
 
 
 # ---------------------------------------------------------
@@ -221,23 +223,26 @@ class ManagerVendors:
     def update_all_vendors_month(cls, year, month):
         """
         Crea la estructura de un mes/año específicos para todos los vendors dentro de Vendor.BASE_PATH.
+        Devuelve una lista de mensajes con los resultados.
         """
+        messages = []
         if not os.path.exists(Vendor.BASE_PATH):                       # Verificar que la ruta destino (vendors) exista
-            print(f"❌ La ruta destino '{cls.BASE_PATH}' no existe. No se puede continuar.")  # Mensaje de error
-            return                                                     # Salir si no existe
+            msg = f"❌ La ruta destino '{cls.BASE_PATH}' no existe. No se puede continuar."
+            messages.append(msg)
+            return messages                                           # Salir si no existe
 
         for vendor_name in os.listdir(Vendor.BASE_PATH):               # Iterar sobre cada vendor en la ruta destino
             vendor_path = os.path.join(Vendor.BASE_PATH, vendor_name)  # Ruta al vendor
             if os.path.isdir(vendor_path):                             # Si la entrada es un directorio (vendor)
                 vendor = Vendor(vendor_name)                           # Crear instancia temporal de Vendor
                 try:
-                    vendor.create_custom_month_structure(vendor_name, year, month)  # Crear estructura personalizada para ese vendor
+                    vendor_messages = vendor.create_custom_month_structure(vendor_name, year, month)  # Crear estructura personalizada para ese vendor
+                    messages.extend(vendor_messages)                   # Agregar mensajes del vendor
                 except Exception as e:
-                    print(f"❌ Error al actualizar {vendor_name}: {e}")  # Informar error si falla
-                else:
-                    print(f"✅ Actualizado vendor: {vendor_name}")      # Informar éxito
+                    messages.append(f"❌ Error al actualizar {vendor_name}: {e}")  # Informar error si falla
 
         print("🎯 Estructura de mes/año creada para todos los vendors.")  # Mensaje final del proceso
+        return messages
 
 
     @staticmethod

@@ -64,9 +64,23 @@ def open_update_months(root):
         """
         Obtiene año y mes ingresados y crea la estructura para todos los vendors.
         """
-        year = int(year_entry.get())        # Convertir año a entero
-        month = int(month_entry.get())      # Convertir mes a entero
-        manager.update_all_vendors_month(year, month)  # Ejecutar creación en todos los vendors
+        year_text = year_entry.get().strip()  # Obtener texto del año y quitar espacios
+        month_text = month_entry.get().strip()  # Obtener texto del mes y quitar espacios
+        
+        if not year_text or not month_text:  # Verificar si alguno está vacío
+            tk.messagebox.showerror("Error", "Por favor, ingrese tanto el año como el mes.")
+            return
+        
+        try:
+            year = int(year_text)  # Convertir año a entero
+            month = int(month_text)  # Convertir mes a entero
+        except ValueError:
+            tk.messagebox.showerror("Error", "El año y el mes deben ser números válidos.")
+            return
+        
+        messages = manager.update_all_vendors_month(year, month)  # Ejecutar creación en todos los vendors y obtener mensajes
+        output = "\n".join(messages)  # Unir mensajes en una cadena
+        tk.messagebox.showinfo("Resultado de la creación", output)  # Mostrar mensaje emergente
 
     # -------------------------------------------------------
     # BOTÓN VOLVER (fila superior izquierda)
