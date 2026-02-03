@@ -53,49 +53,70 @@ def load_vendor_buttons(frame):
     """
     Carga dinámicamente los botones de vendors desde el sistema de archivos.
     """
+    # Eliminar widgets existentes en el frame para refrescar la lista
     for widget in frame.winfo_children():   # Iterar sobre widgets existentes
-        widget.destroy()                    # Eliminar cada widget
+        widget.destroy()                    # Eliminar cada widget (botones anteriores)
 
-    vendor_buttons.clear()                  # Limpiar diccionario de botones
+    # Limpiar el diccionario que almacena referencias a los botones
+    vendor_buttons.clear()
 
-    if not os.path.exists(VENDOR_PATH):     # Si no existe la carpeta de vendors
-        os.makedirs(VENDOR_PATH)            # Crearla
+    # Asegurar que exista la ruta base de vendors; si no existe, crearla
+    if not os.path.exists(VENDOR_PATH):     # Verificar existencia de carpeta
+        os.makedirs(VENDOR_PATH)            # Crear carpeta base de vendors
 
-    folders = [                             # Listar solo carpetas (vendors)
+    # Obtener solo los nombres de carpetas dentro de VENDOR_PATH (cada carpeta = un vendor)
+    folders = [
         f for f in os.listdir(VENDOR_PATH)
         if os.path.isdir(os.path.join(VENDOR_PATH, f))
     ]
 
-    col = 0                                 # Columna actual en la grilla
-    row = 0                                 # Fila actual en la grilla
+    # Inicializar índices de posición para la grilla (2 columnas)
+    col = 0
+    row = 0
 
-    for folder in folders:                  # Iterar sobre cada vendor encontrado
+    # Configurar las dos columnas del grid para que puedan expandirse y centrar contenido
+    frame.grid_columnconfigure(0, weight=1)
+    frame.grid_columnconfigure(1, weight=1)
+
+    # Crear un botón por cada carpeta (vendor) encontrada
+    for folder in folders:
+        # Construir el widget Button con texto y estilo
         btn = tk.Button(
             frame,
-            text=folder,                    # Nombre del vendor
-            width=25,
-            height=2,
-            bg="#d1d1d1",                   # Color gris por defecto
-            command=lambda f=folder: open_vendor(f)  # Asociar función de selección
+            text=folder,                    # Texto visible en el botón (nombre del vendor)
+            width=30,                       # Ancho del botón en caracteres
+            height=2,                       # Altura del botón en líneas
+            bg="#d1d1d1",                 # Color de fondo por defecto
+            font=("Segoe UI", 10),        # Fuente del texto
+            relief="raised",              # Estilo de borde
+            bd=1,                           # Grosor del borde
+            command=lambda f=folder: open_vendor(f)  # Acción al hacer click: alternar selección
         )
-        btn.grid(row=row, column=col, padx=10, pady=10)  # Posicionar en grilla
 
-        vendor_buttons[folder] = btn        # Guardar referencia al botón
+        # Posicionar el botón en la grilla con un pequeño padding
+        btn.grid(row=row, column=col, padx=8, pady=6)
 
-        col += 1                            # Avanzar columna
-        if col > 1:                         # Si se alcanzó 2 columnas
-            col = 0                         # Reiniciar a columna 0
-            row += 1                        # Avanzar a siguiente fila
+        # Guardar referencia al botón en el diccionario para poder cambiar color/estado luego
+        vendor_buttons[folder] = btn
+
+        # Avanzar a la siguiente columna; si se superan 2 columnas, volver a la primera y avanzar fila
+        col += 1
+        if col > 1:
+            col = 0
+            row += 1
 
 
 # ---------------------------------------------------------
 # Función principal para abrir ventana de subir órdenes
-# ---------------------------------------------------------
+# --------------------------------------------------------- 
 def open_upload_orders(root):
     """
     Abre la ventana para subir órdenes de insertion orders.
     Permite seleccionar vendors, año, mes y tipo de orden.
     """
+    # Resetear la lista de vendors seleccionados al abrir la ventana
+    selected_vendors.clear()
+
     win = tk.Toplevel(root)                 # Crear ventana secundaria
 
     # Definir paleta de colores
@@ -213,12 +234,43 @@ def open_upload_orders(root):
     dropdown.grid(row=0, column=5, padx=5)
 
     # ---------------------------------------------------------
-    # Sección de carga de botones de vendors
+    # Sección de carga de botones de vendors (scrollable)
     # ---------------------------------------------------------
-    button_frame = tk.Frame(win, bg=COLOR_BG)  # Frame contenedor
-    button_frame.pack(pady=20)
+    container = tk.Frame(win, bg=COLOR_BG)  # Contenedor que agrupa canvas y scrollbar
+    container.pack(pady=20, fill="both", expand=True)  # Empaquetar con padding y permitir expansión
 
-    load_vendor_buttons(button_frame)        # Cargar botones dinámicamente
+    canvas = tk.Canvas(container, bg=COLOR_BG, highlightthickness=0)  # Canvas que contendrá el frame interior
+
+    vsb = tk.Scrollbar(container, orient="vertical", command=canvas.yview)  # Barra vertical ligada al canvas
+    canvas.configure(yscrollcommand=vsb.set)  # Conectar scrollbar al canvas
+
+    vsb.pack(side="right", fill="y")  # Mostrar scrollbar a la derecha
+    canvas.pack(side="left", fill="both", expand=True)  # Mostrar canvas a la izquierda y expandir
+
+    button_frame = tk.Frame(canvas, bg=COLOR_BG)  # Frame interior para los botones
+
+    window_id = canvas.create_window((0, 0), window=button_frame, anchor="nw")  # Insertar frame interior en el canvas
+
+    def _on_frame_config(event):  # Función que actualiza scrollregion cuando cambia el contenido
+        canvas.configure(scrollregion=canvas.bbox("all"))  # Ajustar scrollregion al bounding box
+
+    button_frame.bind("<Configure>", _on_frame_config)  # Asociar al evento Configure del frame interior
+
+    def _on_canvas_config(event):  # Mantener el ancho del frame interior igual al ancho del canvas
+        try:
+            canvas.itemconfig(window_id, width=event.width)  # Actualizar ancho del objeto ventana insertado
+        except Exception:
+            pass  # Ignorar errores de reconfiguración
+
+    canvas.bind("<Configure>", _on_canvas_config)  # Asociar al evento Configure del canvas
+
+    def _on_mousewheel(event):  # Desplazar con la rueda del ratón (Windows)
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")  # Scroll vertical proporcional al delta
+
+    button_frame.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))  # Activar wheel binding al entrar
+    button_frame.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))  # Desactivar wheel binding al salir
+
+    load_vendor_buttons(button_frame)  # Cargar botones dinámicamente en el frame interior
 
     # ---------------------------------------------------------
     # Checkbox "Seleccionar todos"
@@ -260,13 +312,23 @@ def open_upload_orders(root):
     def upload_orders():
         """
         Valida los datos ingresados y ejecuta el proceso de copia de órdenes.
-        """
+        """        # Resetear la lista de vendors seleccionados al ejecutar el botón
+        
         if not entry_year.get():            # Validar que año no esté vacío
             messagebox.showerror("Error", "Falta el dato: Año")
             return
 
+        if len(entry_year.get()) != 4:      # Validar que año tenga exactamente 4 dígitos
+            messagebox.showerror("Error", "El año debe tener 4 dígitos, intente de nuevo")
+            return
+
         if not entry_month.get():           # Validar que mes no esté vacío
             messagebox.showerror("Error", "Falta el dato: Mes")
+            return
+
+        month_int = int(entry_month.get())  # Convertir a entero para validar rango
+        if month_int < 1 or month_int > 12:  # Validar que mes esté entre 1 y 12
+            messagebox.showerror("Error", "El mes solo puede ser del 1 al 12, intentalo de nuevo")
             return
 
         if not selected_type.get():         # Validar que tipo esté seleccionado
@@ -289,6 +351,12 @@ def open_upload_orders(root):
         # Mostrar todos los mensajes en un solo messagebox
         full_message = "\n".join(messages)
         messagebox.showinfo("Resultado del Proceso", full_message)
+
+        # Resetear la lista de vendors seleccionados y deseleccionar visualmente después de ejecutar el proceso
+        selected_vendors.clear()
+        for btn in vendor_buttons.values():
+            btn.config(bg="#d1d1d1")
+        select_all_var.set(False)
 
     # ---------------------------------------------------------
     # Botón principal: Subir órdenes

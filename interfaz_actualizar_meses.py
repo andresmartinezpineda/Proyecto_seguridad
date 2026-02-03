@@ -71,6 +71,10 @@ def open_update_months(root):
             tk.messagebox.showerror("Error", "Por favor, ingrese tanto el año como el mes.")
             return
         
+        if len(year_text) != 4:  # Verificar que el año tenga exactamente 4 dígitos
+            tk.messagebox.showerror("Error", "El año debe tener exactamente 4 dígitos.")
+            return
+        
         try:
             year = int(year_text)  # Convertir año a entero
             month = int(month_text)  # Convertir mes a entero

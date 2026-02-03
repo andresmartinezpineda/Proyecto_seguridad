@@ -149,16 +149,12 @@ class Vendor:
     def create_custom_month_structure(self, vendor_name, year, month):
         """
         Crea la estructura de carpetas para un año y mes específicos.
-        - Valida mes
         - Ajusta temporalmente current_year/current_month para reutilizar métodos existentes
         - Crea carpetas y subcarpetas debidas
         - Restaura valores originales
         Devuelve una lista de mensajes con los resultados.
         """
         messages = []
-        if not 1 <= month <= 12:                                   # Validar rango del mes
-            messages.append("❌ El mes debe estar entre 1 y 12.")  # Mensaje de error si el mes no está en 1..12
-            return messages                                        # Salir sin hacer cambios
 
         previous_year = self.current_year                          # Guardar valor actual de año
         previous_month = self.current_month                        # Guardar valor actual de mes
@@ -226,6 +222,10 @@ class ManagerVendors:
         Devuelve una lista de mensajes con los resultados.
         """
         messages = []
+        if not 1 <= month <= 12:                                   # Validar rango del mes
+            messages.append("❌ El mes debe estar entre 1 y 12.")  # Mensaje de error si el mes no está en 1..12
+            return messages                                        # Salir sin hacer cambios
+        
         if not os.path.exists(Vendor.BASE_PATH):                       # Verificar que la ruta destino (vendors) exista
             msg = f"❌ La ruta destino '{cls.BASE_PATH}' no existe. No se puede continuar."
             messages.append(msg)
